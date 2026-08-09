@@ -34,18 +34,30 @@ trait ApiResponse
      */
     public function paginated(mixed $resource, string $message = 'Data retrieved successfully', int $code = Response::HTTP_OK): JsonResponse
     {
-        $response = $resource->response()->getData(true);
-
-        return response()->json([
-            'success' => true,
-            'message' => $message,
-            'data' => $response['data'] ?? [],
-            'meta' => $response['meta'] ?? [
+        if (method_exists($resource, 'response')) {
+            $response = $resource->response()->getData(true);
+            $data = $response['data'] ?? [];
+            $meta = $response['meta'] ?? [
                 'current_page' => $resource->currentPage(),
                 'per_page' => $resource->perPage(),
                 'total' => $resource->total(),
                 'last_page' => $resource->lastPage(),
-            ],
+            ];
+        } else {
+            $data = is_array($resource) ? $resource : ($resource->items() ?? []);
+            $meta = [
+                'current_page' => method_exists($resource, 'currentPage') ? $resource->currentPage() : 1,
+                'per_page' => method_exists($resource, 'perPage') ? $resource->perPage() : count($data),
+                'total' => method_exists($resource, 'total') ? $resource->total() : count($data),
+                'last_page' => method_exists($resource, 'lastPage') ? $resource->lastPage() : 1,
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'data' => $data,
+            'meta' => $meta,
         ], $code);
     }
 
