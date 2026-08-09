@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
+use App\Enums\UserStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -19,9 +21,12 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'role_id',
         'name',
         'email',
         'password',
+        'status',
+        'last_login_at',
     ];
 
     /**
@@ -43,7 +48,37 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
+            'status' => UserStatus::class,
         ];
+    }
+
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class, 'uploaded_by');
+    }
+
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class);
+    }
+
+    public function hasPermission(string $permissionName): bool
+    {
+        if (! $this->role) {
+            return false;
+        }
+
+        if ($this->role->name === 'Super Admin') {
+            return true;
+        }
+
+        return $this->role->permissions->contains('name', $permissionName);
     }
 }
