@@ -14,16 +14,17 @@ class R2StorageService
      */
     public function generatePresignedUploadUrl(string $filename, string $mimeType): array
     {
-        $extension = pathinfo($filename, PATHINFO_EXTENSION);
+        $extension = pathinfo($filename, PATHINFO_EXTENSION) ?: 'bin';
         $uuid = Str::uuid()->toString();
         $datePath = now()->format('Y/m');
         $key = "documents/{$datePath}/{$uuid}.{$extension}";
 
-        $adapter = Storage::disk($this->disk)->getAdapter();
-        
-        // If S3 driver is configured, create presigned URL; fallback for local dev
+        $uploadUrl = null;
+
         try {
-            $client = Storage::disk($this->disk)->getClient();
+            // Attempt to get client from S3/R2 Flysystem driver
+            $disk = Storage::disk($this->disk);
+            $client = $disk->getClient();
             $command = $client->getCommand('PutObject', [
                 'Bucket' => config("filesystems.disks.{$this->disk}.bucket"),
                 'Key' => $key,
@@ -33,7 +34,7 @@ class R2StorageService
             $request = $client->createPresignedRequest($command, '+20 minutes');
             $uploadUrl = (string) $request->getUri();
         } catch (\Throwable $e) {
-            // Fallback for dev / testing if S3 client is not fully configured
+            // Graceful fallback for local development / testing if AWS S3 Flysystem package or credentials are not present
             $uploadUrl = url("/api/v1/storage/upload-mock?key=" . urlencode($key));
         }
 

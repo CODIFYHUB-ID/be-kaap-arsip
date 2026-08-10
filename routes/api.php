@@ -47,6 +47,8 @@ Route::prefix('v1')->group(function () {
 
         // Storage / R2 Presign
         Route::post('/storage/presign', [StorageController::class, 'presign']);
+        Route::put('/storage/upload-mock', [StorageController::class, 'uploadMock']);
+        Route::post('/storage/upload-mock', [StorageController::class, 'uploadMock']);
         Route::delete('/storage/{key}', [StorageController::class, 'destroy']);
 
         // Categories

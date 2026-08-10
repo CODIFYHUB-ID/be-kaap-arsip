@@ -31,6 +31,14 @@ class StorageController extends Controller
         return $this->success($data, 'Presigned URL upload berhasil dibuat.');
     }
 
+    public function uploadMock(Request $request): JsonResponse
+    {
+        return $this->success([
+            'key' => $request->get('key'),
+            'uploaded' => true,
+        ], 'Mock upload berhasil diproses.');
+    }
+
     public function destroy(string $key): JsonResponse
     {
         $deleted = $this->r2StorageService->deleteObject(urldecode($key));
