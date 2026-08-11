@@ -21,11 +21,15 @@ class StorageController extends Controller
         $validated = $request->validate([
             'file_name' => 'required|string',
             'mime_type' => 'required|string',
+            'folder' => 'nullable|string',
         ]);
+
+        $folder = $validated['folder'] ?? 'documents';
 
         $data = $this->r2StorageService->generatePresignedUploadUrl(
             $validated['file_name'],
-            $validated['mime_type']
+            $validated['mime_type'],
+            $folder
         );
 
         return $this->success($data, 'Presigned URL upload berhasil dibuat.');
