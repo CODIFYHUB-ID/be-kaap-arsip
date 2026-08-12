@@ -35,6 +35,7 @@ class R2StorageService
             $request = $client->createPresignedRequest($command, '+20 minutes');
             $uploadUrl = (string) $request->getUri();
         } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('R2 Presign Error: ' . $e->getMessage());
             // Graceful fallback for local development / testing if AWS S3 Flysystem package or credentials are not present
             $uploadUrl = url("/api/v1/storage/upload-mock?key=" . urlencode($key));
         }
