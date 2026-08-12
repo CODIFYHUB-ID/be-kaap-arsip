@@ -12,13 +12,22 @@ class R2StorageService
     /**
      * Generate a presigned upload URL for direct client upload to R2.
      */
+<<<<<<< HEAD
     public function generatePresignedUploadUrl(string $filename, string $mimeType, string $folder = 'documents'): array
+=======
+    public function generatePresignedUploadUrl(string $filename, string $mimeType, ?string $folder = 'documents'): array
+>>>>>>> 709bab9 (update kwitansi)
     {
         $extension = pathinfo($filename, PATHINFO_EXTENSION) ?: 'bin';
         $uuid = Str::uuid()->toString();
         $datePath = now()->format('Y/m');
+<<<<<<< HEAD
         $folder = trim($folder, '/');
         $key = "{$folder}/{$datePath}/{$uuid}.{$extension}";
+=======
+        $cleanFolder = trim($folder ?: 'documents', '/');
+        $key = "{$cleanFolder}/{$datePath}/{$uuid}.{$extension}";
+>>>>>>> 709bab9 (update kwitansi)
 
         $uploadUrl = null;
 

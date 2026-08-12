@@ -37,10 +37,18 @@ class StorageController extends Controller
 
     public function uploadMock(Request $request): JsonResponse
     {
-        return $this->success([
-            'key' => $request->get('key'),
-            'uploaded' => true,
-        ], 'Mock upload berhasil diproses.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Mock upload berhasil diproses.',
+            'data' => [
+                'key' => $request->get('key'),
+                'uploaded' => true,
+            ]
+        ], 200, [
+            'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Methods' => 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With, Accept',
+        ]);
     }
 
     public function destroy(string $key): JsonResponse

@@ -24,8 +24,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
 
-    // Auth Public
+    // Auth & Storage Public
     Route::post('/auth/login', [AuthController::class, 'login']);
+
+    // Storage Public Mock Upload (for local development & CORS upload testing)
+    Route::options('/storage/upload-mock', [StorageController::class, 'uploadMock']);
+    Route::put('/storage/upload-mock', [StorageController::class, 'uploadMock']);
+    Route::post('/storage/upload-mock', [StorageController::class, 'uploadMock']);
 
     // Protected API Routes (Sanctum Auth)
     Route::middleware('auth:sanctum')->group(function () {
@@ -47,8 +52,6 @@ Route::prefix('v1')->group(function () {
 
         // Storage / R2 Presign
         Route::post('/storage/presign', [StorageController::class, 'presign']);
-        Route::put('/storage/upload-mock', [StorageController::class, 'uploadMock']);
-        Route::post('/storage/upload-mock', [StorageController::class, 'uploadMock']);
         Route::delete('/storage/{key}', [StorageController::class, 'destroy']);
 
         // Categories
