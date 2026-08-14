@@ -20,7 +20,14 @@ class Document extends Model
         'mime_type',
         'extension',
         'description',
+        'tahun_berkas',
+        'tanggal_dokumen',
         'uploaded_by',
+    ];
+
+    protected $casts = [
+        'tahun_berkas' => 'string',
+        'tanggal_dokumen' => 'date',
     ];
 
     public function mitra(): BelongsTo

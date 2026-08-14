@@ -71,9 +71,33 @@ class MitraController extends Controller
         return $this->success(null, 'Mitra berhasil dihapus.');
     }
 
-    public function documents(Mitra $mitra): JsonResponse
+    public function documents(Request $request, Mitra $mitra): JsonResponse
     {
-        $documents = $mitra->documents()->with(['category', 'uploader'])->orderByDesc('created_at')->get();
+        $query = $mitra->documents()->with(['category', 'uploader'])->orderByDesc('created_at');
+
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('file_name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('tahun_berkas')) {
+            $query->where('tahun_berkas', $request->get('tahun_berkas'));
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->get('category_id'));
+        }
+
+        if ($request->has('page') || $request->has('per_page')) {
+            $perPage = (int) $request->get('per_page', 20);
+            $paginated = $query->paginate($perPage);
+            return $this->paginated($paginated, 'Dokumen milik mitra berhasil diambil.');
+        }
+
+        $documents = $query->get();
         return $this->success($documents, 'Dokumen milik mitra berhasil diambil.');
     }
 }

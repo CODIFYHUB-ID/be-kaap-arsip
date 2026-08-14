@@ -9,7 +9,10 @@ class CategoryService
 {
     public function getAll(): Collection
     {
-        return Category::orderBy('name')->get();
+        return Category::withCount('documents')
+            ->withSum('documents as total_size', 'file_size')
+            ->orderBy('name')
+            ->get();
     }
 
     public function create(array $data): Category

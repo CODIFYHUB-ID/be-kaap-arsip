@@ -21,6 +21,8 @@ return new class extends Migration
             $table->string('mime_type');
             $table->string('extension');
             $table->text('description')->nullable();
+            $table->string('tahun_berkas', 10)->nullable()->index();
+            $table->date('tanggal_dokumen')->nullable()->index();
             $table->foreignId('uploaded_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();

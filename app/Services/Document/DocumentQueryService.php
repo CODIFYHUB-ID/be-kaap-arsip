@@ -34,6 +34,32 @@ class DocumentQueryService
             $query->where('uploaded_by', $filters['uploaded_by']);
         }
 
+        if (! empty($filters['tahun_berkas']) && $filters['tahun_berkas'] !== 'all') {
+            $year = $filters['tahun_berkas'];
+            $query->where(function ($q) use ($year) {
+                $q->where('tahun_berkas', $year)
+                  ->orWhereYear('tanggal_dokumen', $year)
+                  ->orWhere(function ($sub) use ($year) {
+                      $sub->whereNull('tahun_berkas')
+                          ->whereNull('tanggal_dokumen')
+                          ->whereYear('created_at', $year);
+                  });
+            });
+        }
+
+        if (! empty($filters['extension'])) {
+            $ext = strtolower($filters['extension']);
+            if ($ext === 'image' || $ext === 'gambar') {
+                $query->whereIn('extension', ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg']);
+            } elseif ($ext === 'word') {
+                $query->whereIn('extension', ['doc', 'docx']);
+            } elseif ($ext === 'excel') {
+                $query->whereIn('extension', ['xls', 'xlsx', 'csv']);
+            } else {
+                $query->where('extension', $ext);
+            }
+        }
+
         return $query->orderByDesc('created_at')->paginate($perPage);
     }
 }

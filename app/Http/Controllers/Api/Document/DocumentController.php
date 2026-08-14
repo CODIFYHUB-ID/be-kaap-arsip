@@ -21,7 +21,7 @@ class DocumentController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $filters = $request->only(['search', 'mitra_id', 'category_id', 'uploaded_by']);
+        $filters = $request->only(['search', 'mitra_id', 'category_id', 'uploaded_by', 'tahun_berkas', 'extension']);
         $perPage = (int) $request->get('per_page', 20);
 
         $documents = $this->documentQueryService->getPaginated($filters, $perPage);
@@ -39,6 +39,8 @@ class DocumentController extends Controller
             'mime_type' => 'required|string',
             'extension' => 'required|string',
             'description' => 'nullable|string',
+            'tahun_berkas' => 'nullable|string|max:10',
+            'tanggal_dokumen' => 'nullable|date',
         ]);
 
         $document = $this->documentService->create(
@@ -63,6 +65,8 @@ class DocumentController extends Controller
             'category_id' => 'nullable|exists:categories,id',
             'file_name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'tahun_berkas' => 'nullable|string|max:10',
+            'tanggal_dokumen' => 'nullable|date',
         ]);
 
         $updated = $this->documentService->update(

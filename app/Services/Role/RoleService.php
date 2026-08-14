@@ -2,6 +2,7 @@
 
 namespace App\Services\Role;
 
+use App\Models\User;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -10,14 +11,25 @@ class RoleService
     public function getRoles(): array
     {
         $roles = Role::with('permissions')->get();
+        $allUsers = User::with('roles')->get();
 
-        return $roles->map(function ($role) {
+        return $roles->map(function ($role) use ($allUsers) {
+            $matchingUsers = $allUsers->filter(function ($user) use ($role) {
+                return $user->hasRole($role->name);
+            });
+
             return [
                 'id' => $role->id,
                 'name' => $role->name,
                 'guard_name' => $role->guard_name,
                 'permissions_count' => $role->permissions->count(),
                 'permissions' => $role->permissions->pluck('name')->toArray(),
+                'users_count' => $matchingUsers->count(),
+                'users' => $matchingUsers->map(fn($u) => [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'email' => $u->email,
+                ])->values()->toArray(),
             ];
         })->toArray();
     }
