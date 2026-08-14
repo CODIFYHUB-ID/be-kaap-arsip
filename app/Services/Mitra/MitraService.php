@@ -9,7 +9,7 @@ class MitraService
 {
     public function getPaginated(array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
-        $query = Mitra::query();
+        $query = Mitra::withCount(['documents', 'letters'])->withSum('documents as total_size', 'file_size');
 
         if (! empty($filters['search'])) {
             $search = $filters['search'];

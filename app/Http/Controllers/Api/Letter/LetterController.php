@@ -19,7 +19,7 @@ class LetterController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $filters = $request->only(['type', 'search', 'mitra_id', 'category_id']);
+        $filters = $request->only(['type', 'search', 'mitra_id', 'category_id', 'year']);
         $perPage = (int) $request->get('per_page', 20);
 
         $letters = $this->letterService->getPaginated($filters, $perPage);

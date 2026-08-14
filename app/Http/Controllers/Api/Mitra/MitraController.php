@@ -45,6 +45,7 @@ class MitraController extends Controller
 
     public function show(Mitra $mitra): JsonResponse
     {
+        $mitra->loadCount(['documents', 'letters'])->loadSum('documents as total_size', 'file_size');
         return $this->success($mitra->load(['documents', 'letters']), 'Detail mitra berhasil diambil.');
     }
 
@@ -83,8 +84,17 @@ class MitraController extends Controller
             });
         }
 
-        if ($request->filled('tahun_berkas')) {
-            $query->where('tahun_berkas', $request->get('tahun_berkas'));
+        if ($request->filled('tahun_berkas') && $request->get('tahun_berkas') !== 'all') {
+            $year = $request->get('tahun_berkas');
+            $query->where(function ($q) use ($year) {
+                $q->where('tahun_berkas', $year)
+                  ->orWhereYear('tanggal_dokumen', $year)
+                  ->orWhere(function ($sub) use ($year) {
+                      $sub->whereNull('tahun_berkas')
+                          ->whereNull('tanggal_dokumen')
+                          ->whereYear('created_at', $year);
+                  });
+            });
         }
 
         if ($request->filled('category_id')) {

@@ -9,7 +9,12 @@ class LetterService
 {
     public function getPaginated(array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
-        $query = Letter::with(['mitra:id,name', 'category:id,name', 'document:id,file_name', 'creator:id,name']);
+        $query = Letter::with([
+            'mitra:id,name,code,company_name',
+            'category:id,name',
+            'document:id,file_name,file_size,mime_type,extension',
+            'creator:id,name',
+        ]);
 
         if (! empty($filters['type'])) {
             $query->where('type', $filters['type']);
@@ -30,6 +35,15 @@ class LetterService
 
         if (! empty($filters['category_id'])) {
             $query->where('category_id', $filters['category_id']);
+        }
+
+        if (! empty($filters['year']) && $filters['year'] !== 'all') {
+            $year = $filters['year'];
+            $query->where(function ($q) use ($year) {
+                $q->whereYear('letter_date', $year)
+                  ->orWhereYear('received_date', $year)
+                  ->orWhereYear('created_at', $year);
+            });
         }
 
         return $query->orderByDesc('letter_date')->paginate($perPage);
