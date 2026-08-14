@@ -11,8 +11,7 @@ use App\Http\Controllers\Api\RecycleBin\RecycleBinController;
 use App\Http\Controllers\Api\Report\ReportController;
 use App\Http\Controllers\Api\Setting\SettingController;
 use App\Http\Controllers\Api\Storage\StorageController;
-use App\Http\Controllers\Api\User\PermissionController;
-use App\Http\Controllers\Api\User\RoleController;
+use App\Http\Controllers\Api\Role\RoleController;
 use App\Http\Controllers\Api\User\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -73,10 +72,8 @@ Route::prefix('v1')->group(function () {
 
         // Users, Roles & Permissions
         Route::apiResource('/users', UserController::class);
-        Route::get('/roles', [RoleController::class, 'index']);
-        Route::post('/roles', [RoleController::class, 'store']);
-        Route::put('/roles/{role}', [RoleController::class, 'update']);
-        Route::get('/permissions', [PermissionController::class, 'index']);
+        Route::get('/permissions', [RoleController::class, 'permissions']);
+        Route::apiResource('/roles', RoleController::class);
 
         // Activity Logs
         Route::get('/activity-logs', [ActivityLogController::class, 'index']);

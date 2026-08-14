@@ -3,16 +3,16 @@
 namespace App\Services\User;
 
 use App\Models\User;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class UserService
 {
-    public function getPaginated(array $filters = [], int $perPage = 20): LengthAwarePaginator
+    public function getUsers(array $filters = []): array
     {
-        $query = User::with('role:id,name');
+        $query = User::query();
 
-        if (! empty($filters['search'])) {
+        if (!empty($filters['search'])) {
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
@@ -20,36 +20,87 @@ class UserService
             });
         }
 
-        if (! empty($filters['role_id'])) {
-            $query->where('role_id', $filters['role_id']);
-        }
+        $perPage = (int) ($filters['per_page'] ?? 10);
+        $users = $query->latest()->paginate($perPage);
 
-        return $query->orderByDesc('created_at')->paginate($perPage);
+        $mappedData = collect($users->items())->map(function ($user) {
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'status' => $user->status,
+                'last_login_at' => $user->last_login_at?->toISOString(),
+                'created_at' => $user->created_at->toISOString(),
+                'roles' => $user->getRoleNames()->toArray(),
+                'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
+            ];
+        });
+
+        return [
+            'data' => $mappedData,
+            'current_page' => $users->currentPage(),
+            'per_page' => $users->perPage(),
+            'total' => $users->total(),
+            'last_page' => $users->lastPage(),
+        ];
     }
 
-    public function create(array $data): User
+    public function createUser(array $data): array
     {
-        if (! empty($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
-        }
+        $user = User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => Hash::make($data['password']),
+            'status' => $data['status'] ?? 'active',
+        ]);
 
-        return User::create($data)->load('role');
-    }
-
-    public function update(User $user, array $data): User
-    {
-        if (! empty($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
+        if (!empty($data['role'])) {
+            $user->assignRole($data['role']);
         } else {
-            unset($data['password']);
+            $user->assignRole('Staff');
         }
 
-        $user->update($data);
-        return $user->load('role');
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'roles' => $user->getRoleNames()->toArray(),
+            'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
+        ];
     }
 
-    public function delete(User $user): bool
+    public function updateUser(User $user, array $data): array
     {
-        return $user->delete();
+        $updatePayload = [
+            'name' => $data['name'] ?? $user->name,
+            'email' => $data['email'] ?? $user->email,
+        ];
+
+        if (!empty($data['password'])) {
+            $updatePayload['password'] = Hash::make($data['password']);
+        }
+
+        if (isset($data['status'])) {
+            $updatePayload['status'] = $data['status'];
+        }
+
+        $user->update($updatePayload);
+
+        if (!empty($data['role'])) {
+            $user->syncRoles([$data['role']]);
+        }
+
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'roles' => $user->getRoleNames()->toArray(),
+            'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
+        ];
+    }
+
+    public function deleteUser(User $user): bool
+    {
+        return (bool) $user->delete();
     }
 }

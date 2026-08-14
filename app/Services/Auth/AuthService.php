@@ -47,8 +47,12 @@ class AuthService
             userAgent: $userAgent
         );
 
+        $userData = $user->toArray();
+        $userData['roles'] = $user->getRoleNames()->toArray();
+        $userData['permissions'] = $user->getAllPermissions()->pluck('name')->toArray();
+
         return [
-            'user' => $user->load('role.permissions'),
+            'user' => $userData,
             'token' => $token,
         ];
     }

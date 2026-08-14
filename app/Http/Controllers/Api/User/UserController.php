@@ -19,11 +19,8 @@ class UserController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $filters = $request->only(['search', 'role_id']);
-        $perPage = (int) $request->get('per_page', 20);
-
-        $users = $this->userService->getPaginated($filters, $perPage);
-        return $this->paginated($users, 'Daftar user berhasil diambil.');
+        $result = $this->userService->getUsers($request->all());
+        return $this->success($result, 'Daftar pengguna berhasil diambil.');
     }
 
     public function store(Request $request): JsonResponse
@@ -32,36 +29,31 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
-            'role_id' => 'required|exists:roles,id',
-            'status' => 'nullable|string|in:active,inactive',
+            'role' => 'nullable|string',
+            'status' => 'nullable|string',
         ]);
 
-        $user = $this->userService->create($validated);
-        return $this->success($user, 'User berhasil ditambahkan.', 201);
-    }
-
-    public function show(User $user): JsonResponse
-    {
-        return $this->success($user->load('role.permissions'), 'Detail user berhasil diambil.');
+        $result = $this->userService->createUser($validated);
+        return $this->success($result, 'Pengguna baru berhasil ditambahkan.', 201);
     }
 
     public function update(Request $request, User $user): JsonResponse
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'name' => 'sometimes|string|max:255',
+            'email' => "sometimes|email|unique:users,email,{$user->id}",
             'password' => 'nullable|string|min:6',
-            'role_id' => 'required|exists:roles,id',
-            'status' => 'nullable|string|in:active,inactive',
+            'role' => 'nullable|string',
+            'status' => 'nullable|string',
         ]);
 
-        $updated = $this->userService->update($user, $validated);
-        return $this->success($updated, 'User berhasil diperbarui.');
+        $result = $this->userService->updateUser($user, $validated);
+        return $this->success($result, 'Pengguna berhasil diperbarui.');
     }
 
     public function destroy(User $user): JsonResponse
     {
-        $this->userService->delete($user);
-        return $this->success(null, 'User berhasil dihapus.');
+        $this->userService->deleteUser($user);
+        return $this->success(null, 'Pengguna berhasil dihapus.');
     }
 }

@@ -15,27 +15,24 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $superAdminRole = Role::where('name', 'Super Admin')->first();
-        $adminRole = Role::where('name', 'Admin')->first();
-
-        User::firstOrCreate(
+        $owner = User::firstOrCreate(
             ['email' => 'admin@kaap-arsip.com'],
             [
-                'name' => 'Super Admin KAP',
+                'name' => 'Owner KAP Sinuraya',
                 'password' => Hash::make('password123'),
-                'role_id' => $superAdminRole?->id,
                 'status' => UserStatus::ACTIVE,
             ]
         );
+        $owner->assignRole('Owner');
 
-        User::firstOrCreate(
+        $staff = User::firstOrCreate(
             ['email' => 'staff@kaap-arsip.com'],
             [
                 'name' => 'Staff Arsip',
                 'password' => Hash::make('password123'),
-                'role_id' => $adminRole?->id,
                 'status' => UserStatus::ACTIVE,
             ]
         );
+        $staff->assignRole('Staff');
     }
 }
