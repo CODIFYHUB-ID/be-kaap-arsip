@@ -122,7 +122,7 @@ class ReportService
 
         $totalCombined = $allCollected->count();
 
-        // 4. Calculate simplified stats (Total, Surat Masuk, Surat Keluar, Dokumen Perikatan)
+        // 4. Calculate simplified stats (Total, Surat Masuk, Surat Keluar, Kategori Dokumen)
         $suratMasukCount = $allCollected->filter(fn($i) => str_contains(strtolower($i['category']['name']), 'masuk'))->count();
         $suratKeluarCount = $allCollected->filter(fn($i) => str_contains(strtolower($i['category']['name']), 'keluar'))->count();
         $dokumenCount = max(0, $totalCombined - ($suratMasukCount + $suratKeluarCount));
@@ -131,7 +131,7 @@ class ReportService
             ['key' => 'total', 'label' => 'Total Surat & Dokumen', 'count' => $totalCombined, 'percentageChange' => 8.5, 'iconType' => 'document'],
             ['key' => 'surat_masuk', 'label' => 'Surat Masuk', 'count' => $suratMasukCount, 'percentageChange' => 8.5, 'iconType' => 'inbox'],
             ['key' => 'surat_keluar', 'label' => 'Surat Keluar', 'count' => $suratKeluarCount, 'percentageChange' => 6.2, 'iconType' => 'send'],
-            ['key' => 'dokumen', 'label' => 'Dokumen Perikatan', 'count' => $dokumenCount, 'percentageChange' => 9.1, 'iconType' => 'folder'],
+            ['key' => 'dokumen', 'label' => 'Kategori Dokumen', 'count' => $dokumenCount, 'percentageChange' => 9.1, 'iconType' => 'folder'],
         ];
 
         // 5. Apply tab filter if active
@@ -149,34 +149,43 @@ class ReportService
             })->values();
         }
 
-        // 6. Calculate breakdown for Donut Chart based on active/filtered data
-        $grouped = $filteredCollection->groupBy(fn($i) => $i['category']['name']);
-        $colors = ['#10b981', '#2563eb', '#f59e0b', '#06b6d4', '#8b5cf6', '#ec4899'];
+        // 6. Calculate dynamic breakdown for Donut Chart based on active/filtered data & DB categories
+        $colors = ['#10b981', '#2563eb', '#f59e0b', '#06b6d4', '#8b5cf6', '#ec4899', '#3b82f6'];
         $breakdown = [];
         $i = 0;
-
         $filteredTotal = $filteredCollection->count();
 
-        foreach ($grouped as $catName => $grpItems) {
-            $cnt = $grpItems->count();
-            $pct = $filteredTotal > 0 ? round(($cnt / $filteredTotal) * 100) : 0;
-            $breakdown[] = [
-                'name' => $catName,
-                'count' => $cnt,
-                'percentage' => $pct,
-                'color' => $colors[$i % count($colors)],
-            ];
-            $i++;
-        }
+        $allCategories = \App\Models\Category::all();
 
-        if (empty($breakdown)) {
-            $breakdown = [
-                ['name' => 'Surat Masuk', 'percentage' => 0, 'count' => 0, 'color' => '#10b981'],
-                ['name' => 'Surat Keluar', 'percentage' => 0, 'count' => 0, 'color' => '#2563eb'],
-                ['name' => 'Surat Keterangan', 'percentage' => 0, 'count' => 0, 'color' => '#f59e0b'],
-                ['name' => 'Surat Penawaran Audit', 'percentage' => 0, 'count' => 0, 'color' => '#06b6d4'],
-                ['name' => 'Surat Kontrak', 'percentage' => 0, 'count' => 0, 'color' => '#8b5cf6'],
-            ];
+        if ($allCategories->isNotEmpty()) {
+            foreach ($allCategories as $cat) {
+                $cnt = $filteredCollection->filter(function ($item) use ($cat) {
+                    return (isset($item['category']['id']) && (int)$item['category']['id'] === (int)$cat->id)
+                        || (isset($item['category']['name']) && strtolower($item['category']['name']) === strtolower($cat->name));
+                })->count();
+
+                $pct = $filteredTotal > 0 ? round(($cnt / $filteredTotal) * 100) : 0;
+                $breakdown[] = [
+                    'name' => $cat->name,
+                    'count' => $cnt,
+                    'percentage' => $pct,
+                    'color' => $colors[$i % count($colors)],
+                ];
+                $i++;
+            }
+        } else {
+            $grouped = $filteredCollection->groupBy(fn($i) => $i['category']['name']);
+            foreach ($grouped as $catName => $grpItems) {
+                $cnt = $grpItems->count();
+                $pct = $filteredTotal > 0 ? round(($cnt / $filteredTotal) * 100) : 0;
+                $breakdown[] = [
+                    'name' => $catName,
+                    'count' => $cnt,
+                    'percentage' => $pct,
+                    'color' => $colors[$i % count($colors)],
+                ];
+                $i++;
+            }
         }
 
         // 7. Manual pagination
