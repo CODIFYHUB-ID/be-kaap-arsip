@@ -268,9 +268,15 @@ class ReportService
             ->groupBy('extension')
             ->get();
 
+        $byCategory = Document::join('categories', 'documents.category_id', '=', 'categories.id')
+            ->select('categories.name as category_name', DB::raw('count(documents.id) as count'), DB::raw('sum(documents.file_size) as total_size'))
+            ->groupBy('categories.id', 'categories.name')
+            ->get();
+
         return [
             'total_bytes' => (int) $totalBytes,
             'by_extension' => $byExtension,
+            'by_category' => $byCategory,
         ];
     }
 }
