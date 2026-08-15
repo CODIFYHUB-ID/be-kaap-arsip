@@ -57,6 +57,9 @@ class DocumentService
         $fileName = $document->file_name;
         $id = $document->id;
 
+        // Cascade soft delete to associated letters
+        \App\Models\Letter::where('document_id', $id)->delete();
+
         $deleted = $document->delete();
 
         if ($deleted) {

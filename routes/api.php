@@ -59,6 +59,12 @@ Route::prefix('v1')->group(function () {
         // Letters
         Route::apiResource('/letters', LetterController::class);
 
+        // Receipts / Kwitansi Transaksi
+        Route::get('/receipts/stats', [\App\Http\Controllers\Api\Receipt\ReceiptController::class, 'stats']);
+        Route::get('/receipts/generate-number', [\App\Http\Controllers\Api\Receipt\ReceiptController::class, 'generateNumber']);
+        Route::get('/receipts/{receipt}/download', [\App\Http\Controllers\Api\Receipt\ReceiptController::class, 'download']);
+        Route::apiResource('/receipts', \App\Http\Controllers\Api\Receipt\ReceiptController::class);
+
         // Reports
         Route::get('/reports/documents', [ReportController::class, 'documents']);
         Route::get('/reports/mitras', [ReportController::class, 'mitras']);

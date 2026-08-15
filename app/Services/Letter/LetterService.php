@@ -63,6 +63,9 @@ class LetterService
 
     public function delete(Letter $letter): bool
     {
+        if ($letter->document_id) {
+            \App\Models\Document::where('id', $letter->document_id)->delete();
+        }
         return $letter->delete();
     }
 }

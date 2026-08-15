@@ -39,4 +39,9 @@ class Mitra extends Model
     {
         return $this->hasMany(Letter::class);
     }
+
+    public function receipts(): HasMany
+    {
+        return $this->hasMany(Receipt::class);
+    }
 }
