@@ -22,9 +22,9 @@ class ReportController extends Controller
         return $this->success($data, 'Laporan dokumen berhasil diambil.');
     }
 
-    public function mitras(): JsonResponse
+    public function mitras(Request $request): JsonResponse
     {
-        $data = $this->reportService->getMitraReport();
+        $data = $this->reportService->getMitraReport($request->all());
         return $this->success($data, 'Laporan mitra berhasil diambil.');
     }
 

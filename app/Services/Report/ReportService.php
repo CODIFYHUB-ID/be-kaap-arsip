@@ -205,9 +205,59 @@ class ReportService
         ];
     }
 
-    public function getMitraReport(): array
+    public function getMitraReport(array $filters = []): array
     {
-        return Mitra::withCount(['documents', 'letters'])->get()->toArray();
+        $search = $filters['search'] ?? null;
+        $status = $filters['status'] ?? null;
+        $perPage = (int) ($filters['per_page'] ?? 10);
+        $page = (int) ($filters['page'] ?? 1);
+
+        $query = Mitra::query()->withCount(['documents', 'letters', 'receipts']);
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%")
+                  ->orWhere('company_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('npwp', 'like', "%{$search}%")
+                  ->orWhere('city', 'like', "%{$search}%")
+                  ->orWhere('address', 'like', "%{$search}%");
+            });
+        }
+
+        if ($status && $status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        // Global stats calculation
+        $allMitras = Mitra::withCount(['documents', 'letters', 'receipts'])->get();
+        $totalMitra = $allMitras->count();
+        $activeMitra = $allMitras->where('status', 'active')->count();
+        $totalDocs = (int) $allMitras->sum('documents_count');
+        $totalLetters = (int) $allMitras->sum('letters_count');
+        $totalReceipts = (int) $allMitras->sum('receipts_count');
+
+        $paginated = $query->latest()->paginate($perPage, ['*'], 'page', $page);
+
+        return [
+            'stats' => [
+                'total_mitra' => $totalMitra,
+                'active_mitra' => $activeMitra,
+                'inactive_mitra' => max(0, $totalMitra - $activeMitra),
+                'total_documents' => $totalDocs,
+                'total_letters' => $totalLetters,
+                'total_receipts' => $totalReceipts,
+            ],
+            'mitras' => [
+                'data' => $paginated->items(),
+                'current_page' => $paginated->currentPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+                'last_page' => $paginated->lastPage(),
+            ],
+        ];
     }
 
     public function getStorageReport(): array
