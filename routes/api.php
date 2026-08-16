@@ -84,8 +84,11 @@ Route::prefix('v1')->group(function () {
         // Activity Logs
         Route::get('/activity-logs', [ActivityLogController::class, 'index']);
 
-        // System Settings
+        // System Settings & KAP Letterhead Profile
         Route::get('/settings', [SettingController::class, 'index']);
         Route::post('/settings', [SettingController::class, 'update']);
+        Route::get('/settings/kap-profile', [SettingController::class, 'getKapProfile']);
+        Route::put('/settings/kap-profile', [SettingController::class, 'updateKapProfile']);
+        Route::post('/settings/kap-logo', [SettingController::class, 'uploadLogo']);
     });
 });
