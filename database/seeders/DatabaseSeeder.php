@@ -16,6 +16,9 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             CategorySeeder::class,
             SystemSettingSeeder::class,
+            MitraSeeder::class,
+            LetterSeeder::class,
+            ReceiptSeeder::class,
         ]);
     }
 }
