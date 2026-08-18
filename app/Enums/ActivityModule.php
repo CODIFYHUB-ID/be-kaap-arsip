@@ -16,4 +16,5 @@ enum ActivityModule: string
     case PERMISSION = 'PERMISSION';
     case CATEGORY = 'CATEGORY';
     case SYSTEM = 'SYSTEM';
+    case RECEIPT = 'RECEIPT';
 }

@@ -2,11 +2,18 @@
 
 namespace App\Services\Letter;
 
+use App\Enums\ActivityAction;
+use App\Enums\ActivityModule;
 use App\Models\Letter;
+use App\Services\ActivityLog\ActivityLogService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class LetterService
 {
+    public function __construct(
+        protected ActivityLogService $activityLogService
+    ) {}
+
     public function getPaginated(array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
         $query = Letter::with([
@@ -52,20 +59,65 @@ class LetterService
     public function create(array $data, int $userId): Letter
     {
         $data['created_by'] = $userId;
-        return Letter::create($data)->load(['mitra', 'category', 'document', 'creator']);
+        $letter = Letter::create($data)->load(['mitra', 'category', 'document', 'creator']);
+
+        $this->activityLogService->log(
+            userId: $userId,
+            action: ActivityAction::CREATE,
+            module: ActivityModule::LETTER,
+            description: "Menerbitkan surat ({$letter->type}) No. {$letter->letter_number} - {$letter->subject}",
+            resourceType: 'Letter',
+            resourceId: $letter->id,
+            ipAddress: request()->ip(),
+            userAgent: request()->userAgent()
+        );
+
+        return $letter;
     }
 
     public function update(Letter $letter, array $data): Letter
     {
         $letter->update($data);
-        return $letter->load(['mitra', 'category', 'document', 'creator']);
+        $updated = $letter->load(['mitra', 'category', 'document', 'creator']);
+
+        $this->activityLogService->log(
+            userId: auth()->id(),
+            action: ActivityAction::UPDATE,
+            module: ActivityModule::LETTER,
+            description: "Memperbarui surat No. {$letter->letter_number} - {$letter->subject}",
+            resourceType: 'Letter',
+            resourceId: $letter->id,
+            ipAddress: request()->ip(),
+            userAgent: request()->userAgent()
+        );
+
+        return $updated;
     }
 
     public function delete(Letter $letter): bool
     {
+        $letterNo = $letter->letter_number;
+        $subject = $letter->subject;
+        $letterId = $letter->id;
+
         if ($letter->document_id) {
             \App\Models\Document::where('id', $letter->document_id)->delete();
         }
-        return $letter->delete();
+        $deleted = $letter->delete();
+
+        if ($deleted) {
+            $this->activityLogService->log(
+                userId: auth()->id(),
+                action: ActivityAction::DELETE,
+                module: ActivityModule::LETTER,
+                description: "Menghapus surat No. {$letterNo} - {$subject}",
+                resourceType: 'Letter',
+                resourceId: $letterId,
+                ipAddress: request()->ip(),
+                userAgent: request()->userAgent()
+            );
+        }
+
+        return $deleted;
     }
 }

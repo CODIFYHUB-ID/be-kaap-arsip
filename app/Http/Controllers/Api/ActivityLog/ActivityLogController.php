@@ -18,10 +18,16 @@ class ActivityLogController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $filters = $request->only(['module', 'action', 'user_id', 'search']);
+        $filters = $request->only(['module', 'action', 'user_id', 'search', 'start_date', 'end_date']);
         $perPage = (int) $request->get('per_page', 20);
 
         $logs = $this->activityLogService->getPaginated($filters, $perPage);
         return $this->paginated($logs, 'Activity logs berhasil diambil.');
+    }
+
+    public function stats(): JsonResponse
+    {
+        $stats = $this->activityLogService->getStats();
+        return $this->success($stats, 'Statistik activity logs berhasil diambil.');
     }
 }

@@ -55,9 +55,46 @@ class ActivityLogService
         }
 
         if (! empty($filters['search'])) {
-            $query->where('description', 'like', "%{$filters['search']}%");
+            $query->where(function ($q) use ($filters) {
+                $q->where('description', 'like', "%{$filters['search']}%")
+                  ->orWhere('ip_address', 'like', "%{$filters['search']}%")
+                  ->orWhereHas('user', function ($uq) use ($filters) {
+                      $uq->where('name', 'like', "%{$filters['search']}%")
+                         ->orWhere('email', 'like', "%{$filters['search']}%");
+                  });
+            });
+        }
+
+        if (! empty($filters['start_date'])) {
+            $query->whereDate('created_at', '>=', $filters['start_date']);
+        }
+
+        if (! empty($filters['end_date'])) {
+            $query->whereDate('created_at', '<=', $filters['end_date']);
         }
 
         return $query->paginate($perPage);
+    }
+
+    /**
+     * Get summary statistics of activity logs.
+     */
+    public function getStats(): array
+    {
+        $today = now()->startOfDay();
+        $totalLogs = ActivityLog::count();
+        $todayLogs = ActivityLog::where('created_at', '>=', $today)->count();
+        $uniqueUsers = ActivityLog::whereNotNull('user_id')->distinct('user_id')->count('user_id');
+        $topModule = ActivityLog::select('module', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
+            ->groupBy('module')
+            ->orderByDesc('count')
+            ->first();
+
+        return [
+            'total_logs' => $totalLogs,
+            'today_logs' => $todayLogs,
+            'unique_users' => $uniqueUsers,
+            'top_module' => $topModule ? $topModule->module : 'DOCUMENT',
+        ];
     }
 }

@@ -82,6 +82,7 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('/roles', RoleController::class);
 
         // Activity Logs
+        Route::get('/activity-logs/stats', [ActivityLogController::class, 'stats']);
         Route::get('/activity-logs', [ActivityLogController::class, 'index']);
 
         // System Settings & KAP Letterhead Profile

@@ -2,12 +2,19 @@
 
 namespace App\Services\User;
 
+use App\Enums\ActivityAction;
+use App\Enums\ActivityModule;
 use App\Models\User;
+use App\Services\ActivityLog\ActivityLogService;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 
 class UserService
 {
+    public function __construct(
+        protected ActivityLogService $activityLogService
+    ) {}
+
     public function getUsers(array $filters = []): array
     {
         $query = User::query();
@@ -60,6 +67,17 @@ class UserService
             $user->assignRole('Staff');
         }
 
+        $this->activityLogService->log(
+            userId: auth()->id(),
+            action: ActivityAction::CREATE,
+            module: ActivityModule::USER,
+            description: "Membuat akun pengguna baru: {$user->name} ({$user->email})",
+            resourceType: 'User',
+            resourceId: $user->id,
+            ipAddress: request()->ip(),
+            userAgent: request()->userAgent()
+        );
+
         return [
             'id' => $user->id,
             'name' => $user->name,
@@ -90,6 +108,17 @@ class UserService
             $user->syncRoles([$data['role']]);
         }
 
+        $this->activityLogService->log(
+            userId: auth()->id(),
+            action: ActivityAction::UPDATE,
+            module: ActivityModule::USER,
+            description: "Memperbarui profil/role pengguna: {$user->name} ({$user->email})",
+            resourceType: 'User',
+            resourceId: $user->id,
+            ipAddress: request()->ip(),
+            userAgent: request()->userAgent()
+        );
+
         return [
             'id' => $user->id,
             'name' => $user->name,
@@ -101,6 +130,24 @@ class UserService
 
     public function deleteUser(User $user): bool
     {
-        return (bool) $user->delete();
+        $name = $user->name;
+        $email = $user->email;
+        $id = $user->id;
+        $deleted = (bool) $user->delete();
+
+        if ($deleted) {
+            $this->activityLogService->log(
+                userId: auth()->id(),
+                action: ActivityAction::DELETE,
+                module: ActivityModule::USER,
+                description: "Menghapus akun pengguna: {$name} ({$email})",
+                resourceType: 'User',
+                resourceId: $id,
+                ipAddress: request()->ip(),
+                userAgent: request()->userAgent()
+            );
+        }
+
+        return $deleted;
     }
 }
