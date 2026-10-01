@@ -113,6 +113,20 @@ class ReceiptService
             userAgent: $ua
         );
 
+        $formattedAmount = "Rp " . number_format($receipt->amount, 0, ',', '.');
+        \App\Services\Notification\NotificationDispatcher::notifyAll(
+            title: "Kwitansi Baru Diterbitkan",
+            message: "No. {$receipt->receipt_number} ({$formattedAmount})",
+            type: "receipt",
+            url: "/transaksi/kwitansi",
+            meta: [
+                'receipt_id' => $receipt->id,
+                'receipt_number' => $receipt->receipt_number,
+                'amount' => $receipt->amount,
+            ],
+            excludeUserId: $userId
+        );
+
         return $receipt->load(['mitra', 'creator']);
     }
 

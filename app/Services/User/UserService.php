@@ -28,7 +28,7 @@ class UserService
         }
 
         $perPage = (int) ($filters['per_page'] ?? 10);
-        $users = $query->latest()->paginate($perPage);
+        $users = $query->with('mitra:id,name,code')->latest()->paginate($perPage);
 
         $mappedData = collect($users->items())->map(function ($user) {
             return [
@@ -36,6 +36,8 @@ class UserService
                 'name' => $user->name,
                 'email' => $user->email,
                 'status' => $user->status,
+                'mitra_id' => $user->mitra_id,
+                'mitra' => $user->mitra,
                 'last_login_at' => $user->last_login_at?->toISOString(),
                 'created_at' => $user->created_at->toISOString(),
                 'roles' => $user->getRoleNames()->toArray(),
@@ -59,6 +61,7 @@ class UserService
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'status' => $data['status'] ?? 'active',
+            'mitra_id' => $data['mitra_id'] ?? null,
         ]);
 
         if (!empty($data['role'])) {
@@ -100,6 +103,10 @@ class UserService
 
         if (isset($data['status'])) {
             $updatePayload['status'] = $data['status'];
+        }
+
+        if (array_key_exists('mitra_id', $data)) {
+            $updatePayload['mitra_id'] = $data['mitra_id'];
         }
 
         $user->update($updatePayload);

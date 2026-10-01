@@ -23,6 +23,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'role_id',
+        'mitra_id',
         'name',
         'email',
         'password',
@@ -58,6 +59,16 @@ class User extends Authenticatable
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
+    }
+
+    public function mitra(): BelongsTo
+    {
+        return $this->belongsTo(Mitra::class);
+    }
+
+    public function isMitra(): bool
+    {
+        return $this->hasRole('Mitra') || !empty($this->mitra_id);
     }
 
     public function documents(): HasMany

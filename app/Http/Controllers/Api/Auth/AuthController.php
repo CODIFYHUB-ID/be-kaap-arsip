@@ -46,9 +46,11 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         $user = $request->user();
+        $user->load('mitra');
         $userData = $user->toArray();
         $userData['roles'] = $user->getRoleNames()->toArray();
         $userData['permissions'] = $user->getAllPermissions()->pluck('name')->toArray();
+        $userData['mitra'] = $user->mitra;
 
         return $this->success($userData, 'Data user berhasil diambil.');
     }

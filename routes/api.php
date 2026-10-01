@@ -91,5 +91,12 @@ Route::prefix('v1')->group(function () {
         Route::get('/settings/kap-profile', [SettingController::class, 'getKapProfile']);
         Route::put('/settings/kap-profile', [SettingController::class, 'updateKapProfile']);
         Route::post('/settings/kap-logo', [SettingController::class, 'uploadLogo']);
+
+        // Notifications (In-App)
+        Route::get('/notifications', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'index']);
+        Route::get('/notifications/unread-count', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'unreadCount']);
+        Route::patch('/notifications/mark-all-read', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'markAllAsRead']);
+        Route::patch('/notifications/{id}/read', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'markAsRead']);
+        Route::delete('/notifications/{id}', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'destroy']);
     });
 });

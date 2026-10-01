@@ -22,7 +22,7 @@ class MitraController extends Controller
         $filters = $request->only(['search', 'status']);
         $perPage = (int) $request->get('per_page', 20);
 
-        $mitras = $this->mitraService->getPaginated($filters, $perPage);
+        $mitras = $this->mitraService->getPaginated($filters, $perPage, $request->user());
         return $this->paginated($mitras, 'Daftar mitra berhasil diambil.');
     }
 
@@ -35,22 +35,37 @@ class MitraController extends Controller
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:255',
+            'password' => 'nullable|string|min:6',
             'status' => 'nullable|string|in:active,inactive',
             'notes' => 'nullable|string',
         ]);
 
-        $mitra = $this->mitraService->create($validated);
-        return $this->success($mitra, 'Mitra berhasil ditambahkan.', 211);
+        $mitra = $this->mitraService->create($validated, $request->user());
+        return $this->success($mitra, 'Mitra berhasil ditambahkan.', 201);
     }
 
-    public function show(Mitra $mitra): JsonResponse
+    public function show(Request $request, Mitra $mitra): JsonResponse
     {
+        $user = $request->user();
+        if ($user && $user->isMitra() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
+            if ($user->mitra_id && $mitra->id !== $user->mitra_id && $mitra->created_by !== $user->id) {
+                return $this->error('Anda tidak memiliki akses ke data mitra ini.', 403);
+            }
+        }
+
         $mitra->loadCount(['documents', 'letters'])->loadSum('documents as total_size', 'file_size');
-        return $this->success($mitra->load(['documents', 'letters']), 'Detail mitra berhasil diambil.');
+        return $this->success($mitra->load(['documents', 'letters', 'user:id,name,email,status,last_login_at', 'creator:id,name']), 'Detail mitra berhasil diambil.');
     }
 
     public function update(Request $request, Mitra $mitra): JsonResponse
     {
+        $user = $request->user();
+        if ($user && $user->isMitra() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
+            if ($user->mitra_id && $mitra->id !== $user->mitra_id && $mitra->created_by !== $user->id) {
+                return $this->error('Anda tidak memiliki akses untuk mengubah data mitra ini.', 403);
+            }
+        }
+
         $validated = $request->validate([
             'code' => 'required|string|unique:mitras,code,' . $mitra->id,
             'name' => 'required|string|max:255',
@@ -58,22 +73,30 @@ class MitraController extends Controller
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:255',
+            'password' => 'nullable|string|min:6',
             'status' => 'nullable|string|in:active,inactive',
             'notes' => 'nullable|string',
         ]);
 
-        $updated = $this->mitraService->update($mitra, $validated);
+        $updated = $this->mitraService->update($mitra, $validated, $request->user());
         return $this->success($updated, 'Data mitra berhasil diperbarui.');
     }
 
-    public function destroy(Mitra $mitra): JsonResponse
+    public function destroy(Request $request, Mitra $mitra): JsonResponse
     {
-        $this->mitraService->delete($mitra);
+        $this->mitraService->delete($mitra, $request->user());
         return $this->success(null, 'Mitra berhasil dihapus.');
     }
 
     public function documents(Request $request, Mitra $mitra): JsonResponse
     {
+        $user = $request->user();
+        if ($user && $user->isMitra() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
+            if ($user->mitra_id && $mitra->id !== $user->mitra_id && $mitra->created_by !== $user->id) {
+                return $this->error('Anda tidak memiliki akses ke dokumen mitra ini.', 403);
+            }
+        }
+
         $query = $mitra->documents()->with(['category', 'uploader'])->orderByDesc('created_at');
 
         if ($request->filled('search')) {

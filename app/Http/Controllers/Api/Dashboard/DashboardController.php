@@ -15,9 +15,12 @@ class DashboardController extends Controller
         protected DashboardService $dashboardService
     ) {}
 
-    public function index(): JsonResponse
+    public function index(\Illuminate\Http\Request $request): JsonResponse
     {
-        $data = $this->dashboardService->getSummary();
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+
+        $data = $this->dashboardService->getSummary($startDate, $endDate, $request->user());
         return $this->success($data, 'Data dashboard berhasil diambil.');
     }
 }

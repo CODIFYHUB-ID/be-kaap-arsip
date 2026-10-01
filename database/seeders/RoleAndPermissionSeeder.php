@@ -83,10 +83,23 @@ class RoleAndPermissionSeeder extends Seeder
             'view-reports',
         ]);
 
-        // 3. Assign Owner role to all existing users or primary admin
+        // Mitra / Client role
+        $mitraRole = Role::firstOrCreate(['name' => 'Mitra', 'guard_name' => 'web']);
+        $mitraRole->syncPermissions([
+            'view-dashboard',
+            'view-mitra',
+            'create-mitra',
+            'edit-mitra',
+            'view-documents',
+            'upload-documents',
+            'view-letters',
+            'create-letters',
+        ]);
+
+        // 3. Assign Owner role to all existing users without any role
         $users = User::all();
         foreach ($users as $user) {
-            if (!$user->hasRole('Owner')) {
+            if ($user->roles()->count() === 0) {
                 $user->assignRole('Owner');
             }
         }

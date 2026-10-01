@@ -47,9 +47,11 @@ class AuthService
             userAgent: $userAgent
         );
 
+        $user->load('mitra');
         $userData = $user->toArray();
         $userData['roles'] = $user->getRoleNames()->toArray();
         $userData['permissions'] = $user->getAllPermissions()->pluck('name')->toArray();
+        $userData['mitra'] = $user->mitra;
 
         return [
             'user' => $userData,

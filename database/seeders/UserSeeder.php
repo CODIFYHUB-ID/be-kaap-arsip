@@ -34,5 +34,15 @@ class UserSeeder extends Seeder
             ]
         );
         $staff->assignRole('Staff');
+
+        $mitraUser = User::firstOrCreate(
+            ['email' => 'mitra@kaap-arsip.com'],
+            [
+                'name' => 'Mitra Budi Santoso',
+                'password' => Hash::make('password123'),
+                'status' => UserStatus::ACTIVE,
+            ]
+        );
+        $mitraUser->assignRole('Mitra');
     }
 }

@@ -30,6 +30,7 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
             'role' => 'nullable|string',
+            'mitra_id' => 'nullable|exists:mitras,id',
             'status' => 'nullable|string',
         ]);
 
@@ -44,6 +45,7 @@ class UserController extends Controller
             'email' => "sometimes|email|unique:users,email,{$user->id}",
             'password' => 'nullable|string|min:6',
             'role' => 'nullable|string',
+            'mitra_id' => 'nullable|exists:mitras,id',
             'status' => 'nullable|string',
         ]);
 

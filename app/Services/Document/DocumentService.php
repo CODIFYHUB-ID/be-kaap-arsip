@@ -31,6 +31,20 @@ class DocumentService
             userAgent: $ua
         );
 
+        // Dispatch in-app notification to Manager, Partner, Owner & Admin
+        \App\Services\Notification\NotificationDispatcher::notifyAll(
+            title: "Dokumen Baru Diunggah",
+            message: "Berkas '{$document->file_name}' telah diunggah ke sistem.",
+            type: "document",
+            url: "/mitra",
+            meta: [
+                'document_id' => $document->id,
+                'mitra_id' => $document->mitra_id,
+                'file_name' => $document->file_name,
+            ],
+            excludeUserId: $userId
+        );
+
         return $document->load(['mitra', 'category', 'uploader']);
     }
 

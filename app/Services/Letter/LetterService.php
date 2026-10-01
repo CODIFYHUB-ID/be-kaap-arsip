@@ -14,14 +14,29 @@ class LetterService
         protected ActivityLogService $activityLogService
     ) {}
 
-    public function getPaginated(array $filters = [], int $perPage = 20): LengthAwarePaginator
+    public function getPaginated(array $filters = [], int $perPage = 20, ?\App\Models\User $currentUser = null): LengthAwarePaginator
     {
+        $currentUser = $currentUser ?? auth()->user();
+
         $query = Letter::with([
             'mitra:id,name,code,company_name',
             'category:id,name',
             'document:id,file_name,file_size,mime_type,extension',
             'creator:id,name',
         ]);
+
+        // Scope to Mitra's own letters if logged in as Mitra
+        if ($currentUser && $currentUser->isMitra() && ! $currentUser->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
+            $query->where(function ($q) use ($currentUser) {
+                if ($currentUser->mitra_id) {
+                    $q->where('mitra_id', $currentUser->mitra_id);
+                }
+                $q->orWhere('created_by', $currentUser->id)
+                  ->orWhereHas('mitra', function ($mq) use ($currentUser) {
+                      $mq->where('created_by', $currentUser->id);
+                  });
+            });
+        }
 
         if (! empty($filters['type'])) {
             $query->where('type', $filters['type']);
@@ -70,6 +85,22 @@ class LetterService
             resourceId: $letter->id,
             ipAddress: request()->ip(),
             userAgent: request()->userAgent()
+        );
+
+        $typeLabel = $letter->type === 'incoming' ? 'Surat Masuk' : 'Surat Keluar';
+        $targetUrl = $letter->type === 'incoming' ? '/surat/masuk' : '/surat/keluar';
+
+        \App\Services\Notification\NotificationDispatcher::notifyAll(
+            title: "{$typeLabel} Baru",
+            message: "No. {$letter->letter_number}: {$letter->subject}",
+            type: "letter",
+            url: $targetUrl,
+            meta: [
+                'letter_id' => $letter->id,
+                'letter_number' => $letter->letter_number,
+                'type' => $letter->type,
+            ],
+            excludeUserId: $userId
         );
 
         return $letter;

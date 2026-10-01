@@ -10,9 +10,23 @@ class DocumentQueryService
     /**
      * Query documents with efficient database filtering and pagination.
      */
-    public function getPaginated(array $filters = [], int $perPage = 20): LengthAwarePaginator
+    public function getPaginated(array $filters = [], int $perPage = 20, ?\App\Models\User $currentUser = null): LengthAwarePaginator
     {
+        $currentUser = $currentUser ?? auth()->user();
         $query = Document::with(['mitra:id,name,code', 'category:id,name', 'uploader:id,name']);
+
+        // Scope to Mitra's own documents if logged in as Mitra
+        if ($currentUser && $currentUser->isMitra() && ! $currentUser->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
+            $query->where(function ($q) use ($currentUser) {
+                if ($currentUser->mitra_id) {
+                    $q->where('mitra_id', $currentUser->mitra_id);
+                }
+                $q->orWhere('uploaded_by', $currentUser->id)
+                  ->orWhereHas('mitra', function ($mq) use ($currentUser) {
+                      $mq->where('created_by', $currentUser->id);
+                  });
+            });
+        }
 
         if (! empty($filters['search'])) {
             $search = $filters['search'];
