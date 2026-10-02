@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->group(function () {
 
     // Auth & Storage Public
-    Route::post('/auth/login', [AuthController::class, 'login']);
+    Route::post('/auth/login', [AuthController::class, 'login'])->name('login');
 
     // Storage Public Mock Upload (for local development & CORS upload testing)
     Route::options('/storage/upload-mock', [StorageController::class, 'uploadMock']);
@@ -46,8 +46,17 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('/mitras', MitraController::class);
 
         // Documents
+        Route::get('/documents/pending-approvals', [DocumentController::class, 'pendingApprovals']);
+        Route::get('/documents/bundle', [DocumentController::class, 'bundle']);
+        Route::patch('/documents/{document}/approve', [DocumentController::class, 'approve']);
+        Route::patch('/documents/{document}/reject', [DocumentController::class, 'reject']);
+        Route::patch('/documents/{document}/review-kkp', [DocumentController::class, 'reviewKKP']);
         Route::get('/documents/{document}/download', [DocumentController::class, 'download']);
         Route::apiResource('/documents', DocumentController::class);
+
+        // Auditor Assignments
+        Route::get('/auditor-assignments/my-clients', [\App\Http\Controllers\Api\Auditor\AuditorAssignmentController::class, 'myClients']);
+        Route::apiResource('/auditor-assignments', \App\Http\Controllers\Api\Auditor\AuditorAssignmentController::class);
 
         // Storage / R2 Presign
         Route::post('/storage/presign', [StorageController::class, 'presign']);
@@ -57,6 +66,8 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('/categories', CategoryController::class)->except(['show']);
 
         // Letters
+        Route::get('/letters/generate-number', [LetterController::class, 'generateNumber']);
+        Route::patch('/letters/{letter}/lock', [LetterController::class, 'lock']);
         Route::apiResource('/letters', LetterController::class);
 
         // Receipts / Kwitansi Transaksi

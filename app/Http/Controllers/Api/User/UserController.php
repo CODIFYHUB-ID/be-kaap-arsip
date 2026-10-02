@@ -17,14 +17,32 @@ class UserController extends Controller
         protected UserService $userService
     ) {}
 
+    protected function checkUserAccess(Request $request): ?JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            return $this->error('Unauthenticated.', 401);
+        }
+
+        if (($user->isMitra() || $user->isAuditor()) && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
+            return $this->forbidden('Akses ditolak. Anda tidak berwenang mengelola data pengguna.');
+        }
+
+        return null;
+    }
+
     public function index(Request $request): JsonResponse
     {
+        if ($deny = $this->checkUserAccess($request)) return $deny;
+
         $result = $this->userService->getUsers($request->all());
         return $this->success($result, 'Daftar pengguna berhasil diambil.');
     }
 
     public function store(Request $request): JsonResponse
     {
+        if ($deny = $this->checkUserAccess($request)) return $deny;
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
@@ -40,6 +58,8 @@ class UserController extends Controller
 
     public function update(Request $request, User $user): JsonResponse
     {
+        if ($deny = $this->checkUserAccess($request)) return $deny;
+
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'email' => "sometimes|email|unique:users,email,{$user->id}",
@@ -53,8 +73,10 @@ class UserController extends Controller
         return $this->success($result, 'Pengguna berhasil diperbarui.');
     }
 
-    public function destroy(User $user): JsonResponse
+    public function destroy(Request $request, User $user): JsonResponse
     {
+        if ($deny = $this->checkUserAccess($request)) return $deny;
+
         $this->userService->deleteUser($user);
         return $this->success(null, 'Pengguna berhasil dihapus.');
     }

@@ -32,6 +32,10 @@ class ReceiptService
             });
         }
 
+        if (! empty($filters['receipt_type']) && $filters['receipt_type'] !== 'all') {
+            $query->where('receipt_type', $filters['receipt_type']);
+        }
+
         if (! empty($filters['mitra_id']) && $filters['mitra_id'] !== 'all') {
             $query->where('mitra_id', $filters['mitra_id']);
         }
@@ -73,23 +77,29 @@ class ReceiptService
     public function generateReceiptNumber(): string
     {
         $year = date('Y');
-        $month = date('m');
-        $prefix = "KW/{$year}/{$month}/";
+        $month = (int) date('n');
+        $romanMonth = \App\Services\Letter\LetterService::romanMonth($month);
+        $prefix = "KW/{$year}/{$romanMonth}/";
 
-        $last = Receipt::withTrashed()
-            ->where('receipt_number', 'like', "{$prefix}%")
-            ->orderByDesc('id')
-            ->value('receipt_number');
+        $count = Receipt::withTrashed()
+            ->where(function ($q) use ($year) {
+                $q->whereYear('transaction_date', $year)
+                  ->orWhereYear('created_at', $year);
+            })
+            ->count();
 
-        if ($last) {
-            $parts = explode('/', $last);
-            $lastSeq = (int) end($parts);
-            $nextSeq = str_pad((string) ($lastSeq + 1), 3, '0', STR_PAD_LEFT);
-        } else {
-            $nextSeq = '001';
-        }
+        $seq = $count + 1;
+        do {
+            $formattedSeq = str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
+            $candidate = "{$prefix}{$formattedSeq}";
+            $exists = Receipt::withTrashed()->where('receipt_number', $candidate)->exists();
+            if (! $exists) {
+                return $candidate;
+            }
+            $seq++;
+        } while ($seq < 9999);
 
-        return "{$prefix}{$nextSeq}";
+        return "{$prefix}999";
     }
 
     public function create(array $data, int $userId, ?string $ip = null, ?string $ua = null): Receipt

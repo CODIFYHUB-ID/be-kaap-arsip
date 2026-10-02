@@ -13,7 +13,7 @@ class DocumentQueryService
     public function getPaginated(array $filters = [], int $perPage = 20, ?\App\Models\User $currentUser = null): LengthAwarePaginator
     {
         $currentUser = $currentUser ?? auth()->user();
-        $query = Document::with(['mitra:id,name,code', 'category:id,name', 'uploader:id,name']);
+        $query = Document::with(['mitra:id,name,code,company_name', 'category:id,name', 'uploader:id,name', 'reviewer:id,name']);
 
         // Scope to Mitra's own documents if logged in as Mitra
         if ($currentUser && $currentUser->isMitra() && ! $currentUser->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
@@ -25,6 +25,18 @@ class DocumentQueryService
                   ->orWhereHas('mitra', function ($mq) use ($currentUser) {
                       $mq->where('created_by', $currentUser->id);
                   });
+            });
+        }
+
+        // Scope to Auditor assigned clients if logged in as Auditor
+        if ($currentUser && $currentUser->isAuditor() && ! $currentUser->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
+            $assignedMitraIds = \App\Models\AuditorAssignment::where('auditor_id', $currentUser->id)
+                ->where('status', 'active')
+                ->pluck('mitra_id')
+                ->toArray();
+            $query->where(function ($q) use ($assignedMitraIds, $currentUser) {
+                $q->whereIn('mitra_id', $assignedMitraIds)
+                  ->orWhere('uploaded_by', $currentUser->id);
             });
         }
 
@@ -42,6 +54,15 @@ class DocumentQueryService
 
         if (! empty($filters['category_id'])) {
             $query->where('category_id', $filters['category_id']);
+        }
+
+        if (isset($filters['is_working_paper']) && $filters['is_working_paper'] !== '' && $filters['is_working_paper'] !== 'all') {
+            $isWp = filter_var($filters['is_working_paper'], FILTER_VALIDATE_BOOLEAN);
+            $query->where('is_working_paper', $isWp);
+        }
+
+        if (! empty($filters['review_status']) && $filters['review_status'] !== 'all') {
+            $query->where('review_status', $filters['review_status']);
         }
 
         if (! empty($filters['uploaded_by'])) {

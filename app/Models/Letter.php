@@ -18,11 +18,20 @@ class Letter extends Model
         'type',
         'letter_number',
         'subject',
+        'sender',
+        'recipient',
+        'disposition',
+        'status',
         'letter_date',
         'received_date',
         'description',
         'document_id',
         'created_by',
+        'confirmation_type',
+        'confirmation_status',
+        'third_party_name',
+        'confirmation_reply_date',
+        'exception_notes',
     ];
 
     protected function casts(): array
@@ -31,6 +40,7 @@ class Letter extends Model
             'type' => LetterType::class,
             'letter_date' => 'date',
             'received_date' => 'date',
+            'confirmation_reply_date' => 'date',
         ];
     }
 

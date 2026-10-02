@@ -16,14 +16,32 @@ class SettingController extends Controller
         protected SystemSettingService $settingService
     ) {}
 
-    public function index(): JsonResponse
+    protected function checkAdminAccess(Request $request): ?JsonResponse
     {
+        $user = $request->user();
+        if (! $user) {
+            return $this->error('Unauthenticated.', 401);
+        }
+
+        if (($user->isMitra() || $user->isAuditor()) && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
+            return $this->forbidden('Akses ditolak. Anda tidak berwenang mengakses atau mengubah pengaturan sistem.');
+        }
+
+        return null;
+    }
+
+    public function index(Request $request): JsonResponse
+    {
+        if ($deny = $this->checkAdminAccess($request)) return $deny;
+
         $settings = $this->settingService->getAll();
         return $this->success($settings, 'Pengaturan sistem berhasil diambil.');
     }
 
     public function update(Request $request): JsonResponse
     {
+        if ($deny = $this->checkAdminAccess($request)) return $deny;
+
         $validated = $request->validate([
             'settings' => 'required|array',
             'settings.*.key' => 'required|string',
@@ -45,6 +63,8 @@ class SettingController extends Controller
 
     public function updateKapProfile(Request $request): JsonResponse
     {
+        if ($deny = $this->checkAdminAccess($request)) return $deny;
+
         $validated = $request->validate([
             'kap_name' => 'nullable|string|max:255',
             'kap_tagline' => 'nullable|string|max:255',
@@ -72,6 +92,8 @@ class SettingController extends Controller
 
     public function uploadLogo(Request $request): JsonResponse
     {
+        if ($deny = $this->checkAdminAccess($request)) return $deny;
+
         $request->validate([
             'logo' => 'required|image|mimes:jpeg,png,jpg,webp,svg|max:5120', // max 5MB
         ]);

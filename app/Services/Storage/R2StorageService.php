@@ -15,10 +15,18 @@ class R2StorageService
     public function generatePresignedUploadUrl(string $filename, string $mimeType, ?string $folder = 'documents'): array
     {
         $extension = pathinfo($filename, PATHINFO_EXTENSION) ?: 'bin';
-        $uuid = Str::uuid()->toString();
-        $datePath = now()->format('Y/m');
+        $originalBasename = pathinfo($filename, PATHINFO_FILENAME);
+        $slug = Str::slug($originalBasename) ?: 'file';
+        $uuidShort = substr(Str::uuid()->toString(), 0, 8);
         $cleanFolder = trim($folder ?: 'documents', '/');
-        $key = "{$cleanFolder}/{$datePath}/{$uuid}.{$extension}";
+
+        // Ensure path hierarchy is organized by Year and clean naming
+        if (!preg_match('/\b(19|20)\d{2}\b/', $cleanFolder)) {
+            $year = now()->format('Y');
+            $key = "{$cleanFolder}/{$year}/{$slug}-{$uuidShort}.{$extension}";
+        } else {
+            $key = "{$cleanFolder}/{$slug}-{$uuidShort}.{$extension}";
+        }
 
         $uploadUrl = null;
 
@@ -35,7 +43,7 @@ class R2StorageService
             $request = $client->createPresignedRequest($command, '+20 minutes');
             $uploadUrl = (string) $request->getUri();
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('R2 Presign Error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::info('R2 Presign Fallback to Mock: ' . $e->getMessage());
             // Graceful fallback for local development / testing if AWS S3 Flysystem package or credentials are not present
             $uploadUrl = url("/api/v1/storage/upload-mock?key=" . urlencode($key));
         }

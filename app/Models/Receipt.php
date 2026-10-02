@@ -14,6 +14,9 @@ class Receipt extends Model
     protected $fillable = [
         'mitra_id',
         'receipt_number',
+        'receipt_type',
+        'payment_method',
+        'payer_name',
         'amount',
         'transaction_date',
         'description',

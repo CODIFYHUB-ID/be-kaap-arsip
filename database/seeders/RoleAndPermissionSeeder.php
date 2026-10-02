@@ -96,6 +96,17 @@ class RoleAndPermissionSeeder extends Seeder
             'create-letters',
         ]);
 
+        // Auditor role (Tim Lapangan / Senior-Junior Auditor - Clean Financial Boundary)
+        $auditorRole = Role::firstOrCreate(['name' => 'Auditor', 'guard_name' => 'web']);
+        $auditorRole->syncPermissions([
+            'view-dashboard',
+            'view-mitra',
+            'view-documents',
+            'upload-documents',
+            'view-letters',
+            'create-letters',
+        ]);
+
         // 3. Assign Owner role to all existing users without any role
         $users = User::all();
         foreach ($users as $user) {

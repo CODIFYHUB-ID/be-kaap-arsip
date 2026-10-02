@@ -37,11 +37,19 @@ class StorageController extends Controller
 
     public function uploadMock(Request $request): JsonResponse
     {
+        $key = $request->query('key') ?: $request->input('key');
+        if ($key) {
+            $rawContent = $request->getContent();
+            if (!empty($rawContent)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->put($key, $rawContent);
+            }
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Mock upload berhasil diproses.',
             'data' => [
-                'key' => $request->get('key'),
+                'key' => $key,
                 'uploaded' => true,
             ]
         ], 200, [

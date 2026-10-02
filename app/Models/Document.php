@@ -23,11 +23,25 @@ class Document extends Model
         'tahun_berkas',
         'tanggal_dokumen',
         'uploaded_by',
+        'approval_status',
+        'is_final_archive',
+        'approved_by',
+        'approved_at',
+        'approval_notes',
+        'is_working_paper',
+        'review_status',
+        'reviewed_by',
+        'reviewed_at',
+        'review_notes',
     ];
 
     protected $casts = [
         'tahun_berkas' => 'string',
         'tanggal_dokumen' => 'date',
+        'approved_at' => 'datetime',
+        'is_final_archive' => 'boolean',
+        'is_working_paper' => 'boolean',
+        'reviewed_at' => 'datetime',
     ];
 
     public function mitra(): BelongsTo
@@ -43,5 +57,15 @@ class Document extends Model
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 }

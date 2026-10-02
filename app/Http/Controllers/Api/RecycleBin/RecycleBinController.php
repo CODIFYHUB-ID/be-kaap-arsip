@@ -16,14 +16,31 @@ class RecycleBinController extends Controller
         protected RecycleBinService $recycleBinService
     ) {}
 
-    public function index(): JsonResponse
+    protected function checkRecycleBinAccess(Request $request): ?JsonResponse
     {
+        $user = $request->user();
+        if (! $user) {
+            return $this->error('Unauthenticated.', 401);
+        }
+
+        if ($user->isMitra() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
+            return $this->error('Akses ditolak. Mitra tidak berwenang mengakses Recycle Bin.', 403);
+        }
+
+        return null;
+    }
+
+    public function index(Request $request): JsonResponse
+    {
+        if ($deny = $this->checkRecycleBinAccess($request)) return $deny;
+
         $items = $this->recycleBinService->getDeletedItems();
         return $this->success($items, 'Daftar data di Recycle Bin berhasil diambil.');
     }
 
     public function restore(Request $request, int $id): JsonResponse
     {
+        if ($deny = $this->checkRecycleBinAccess($request)) return $deny;
         $request->validate([
             'type' => 'required|string|in:document,mitra,letter,category',
         ]);
@@ -38,6 +55,8 @@ class RecycleBinController extends Controller
 
     public function destroy(Request $request, int $id): JsonResponse
     {
+        if ($deny = $this->checkRecycleBinAccess($request)) return $deny;
+
         $request->validate([
             'type' => 'required|string|in:document,mitra,letter,category',
         ]);

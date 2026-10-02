@@ -28,10 +28,18 @@ class MitraController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $user = $request->user();
+        if ($user && $user->isAuditor() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
+            return $this->error('Akses ditolak. Auditor tidak berwenang mendaftarkan entitas klien baru.', 403);
+        }
+
         $validated = $request->validate([
             'code' => 'required|string|unique:mitras,code',
             'name' => 'required|string|max:255',
             'company_name' => 'nullable|string|max:255',
+            'npwp' => 'nullable|string|max:50',
+            'bidang_usaha' => 'nullable|string|max:255',
+            'direksi' => 'nullable|string|max:255',
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:255',
@@ -53,6 +61,16 @@ class MitraController extends Controller
             }
         }
 
+        if ($user && $user->isAuditor() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
+            $assignedMitraIds = \App\Models\AuditorAssignment::where('auditor_id', $user->id)
+                ->where('status', 'active')
+                ->pluck('mitra_id')
+                ->toArray();
+            if (! in_array($mitra->id, $assignedMitraIds)) {
+                return $this->error('Akses ditolak. Klien ini tidak termasuk dalam surat tugas audit Anda.', 403);
+            }
+        }
+
         $mitra->loadCount(['documents', 'letters'])->loadSum('documents as total_size', 'file_size');
         return $this->success($mitra->load(['documents', 'letters', 'user:id,name,email,status,last_login_at', 'creator:id,name']), 'Detail mitra berhasil diambil.');
     }
@@ -60,6 +78,10 @@ class MitraController extends Controller
     public function update(Request $request, Mitra $mitra): JsonResponse
     {
         $user = $request->user();
+        if ($user && $user->isAuditor() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
+            return $this->error('Akses ditolak. Auditor tidak berwenang mengubah master data profil klien.', 403);
+        }
+
         if ($user && $user->isMitra() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
             if ($user->mitra_id && $mitra->id !== $user->mitra_id && $mitra->created_by !== $user->id) {
                 return $this->error('Anda tidak memiliki akses untuk mengubah data mitra ini.', 403);
@@ -67,9 +89,12 @@ class MitraController extends Controller
         }
 
         $validated = $request->validate([
-            'code' => 'required|string|unique:mitras,code,' . $mitra->id,
-            'name' => 'required|string|max:255',
+            'code' => 'sometimes|required|string|unique:mitras,code,' . $mitra->id,
+            'name' => 'sometimes|required|string|max:255',
             'company_name' => 'nullable|string|max:255',
+            'npwp' => 'nullable|string|max:50',
+            'bidang_usaha' => 'nullable|string|max:255',
+            'direksi' => 'nullable|string|max:255',
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:255',
@@ -84,6 +109,11 @@ class MitraController extends Controller
 
     public function destroy(Request $request, Mitra $mitra): JsonResponse
     {
+        $user = $request->user();
+        if ($user && $user->isAuditor() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
+            return $this->error('Akses ditolak. Auditor tidak berwenang menghapus entitas klien.', 403);
+        }
+
         $this->mitraService->delete($mitra, $request->user());
         return $this->success(null, 'Mitra berhasil dihapus.');
     }
@@ -94,6 +124,16 @@ class MitraController extends Controller
         if ($user && $user->isMitra() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
             if ($user->mitra_id && $mitra->id !== $user->mitra_id && $mitra->created_by !== $user->id) {
                 return $this->error('Anda tidak memiliki akses ke dokumen mitra ini.', 403);
+            }
+        }
+
+        if ($user && $user->isAuditor() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
+            $assignedMitraIds = \App\Models\AuditorAssignment::where('auditor_id', $user->id)
+                ->where('status', 'active')
+                ->pluck('mitra_id')
+                ->toArray();
+            if (! in_array($mitra->id, $assignedMitraIds)) {
+                return $this->error('Akses ditolak. Dokumen klien ini tidak dapat diakses karena di luar surat tugas audit Anda.', 403);
             }
         }
 

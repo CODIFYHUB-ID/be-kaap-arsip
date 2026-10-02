@@ -16,26 +16,48 @@ class ReportController extends Controller
         protected ReportService $reportService
     ) {}
 
+    protected function checkReportAccess(Request $request): ?JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            return $this->error('Unauthenticated.', 401);
+        }
+
+        if ($user->isMitra() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
+            return $this->error('Akses ditolak. Mitra tidak berwenang mengakses laporan kantor.', 403);
+        }
+
+        return null;
+    }
+
     public function documents(Request $request): JsonResponse
     {
+        if ($deny = $this->checkReportAccess($request)) return $deny;
+
         $data = $this->reportService->getDocumentReport($request->all());
         return $this->success($data, 'Laporan dokumen berhasil diambil.');
     }
 
     public function mitras(Request $request): JsonResponse
     {
+        if ($deny = $this->checkReportAccess($request)) return $deny;
+
         $data = $this->reportService->getMitraReport($request->all());
         return $this->success($data, 'Laporan mitra berhasil diambil.');
     }
 
-    public function storage(): JsonResponse
+    public function storage(Request $request): JsonResponse
     {
+        if ($deny = $this->checkReportAccess($request)) return $deny;
+
         $data = $this->reportService->getStorageReport();
         return $this->success($data, 'Laporan penggunaan storage berhasil diambil.');
     }
 
     public function export(Request $request): JsonResponse
     {
+        if ($deny = $this->checkReportAccess($request)) return $deny;
+
         // Placeholder for queue export background process
         return $this->success([
             'status' => 'queued',

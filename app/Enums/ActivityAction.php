@@ -14,5 +14,7 @@ enum ActivityAction: string
     case DOWNLOAD = 'DOWNLOAD';
     case VIEW = 'VIEW';
     case EXPORT = 'EXPORT';
+    case APPROVE = 'APPROVE';
+    case REJECT = 'REJECT';
     case CHANGE_PERMISSION = 'CHANGE_PERMISSION';
 }

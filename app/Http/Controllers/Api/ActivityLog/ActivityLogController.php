@@ -18,6 +18,11 @@ class ActivityLogController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
+        if (! $user || ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
+            return $this->error('Akses ditolak. Log audit aktivitas mendalam hanya dapat diakses oleh Pimpinan KAP / Owner.', 403);
+        }
+
         $filters = $request->only(['module', 'action', 'user_id', 'search', 'start_date', 'end_date']);
         $perPage = (int) $request->get('per_page', 20);
 
@@ -25,8 +30,13 @@ class ActivityLogController extends Controller
         return $this->paginated($logs, 'Activity logs berhasil diambil.');
     }
 
-    public function stats(): JsonResponse
+    public function stats(Request $request): JsonResponse
     {
+        $user = $request->user();
+        if (! $user || ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
+            return $this->error('Akses ditolak. Statistik log aktivitas hanya dapat diakses oleh Pimpinan KAP / Owner.', 403);
+        }
+
         $stats = $this->activityLogService->getStats();
         return $this->success($stats, 'Statistik activity logs berhasil diambil.');
     }

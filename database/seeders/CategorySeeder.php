@@ -19,6 +19,9 @@ class CategorySeeder extends Seeder
             ['name' => 'Surat Keterangan', 'description' => 'Surat keterangan resmi dari kantor'],
             ['name' => 'Laporan Audit', 'description' => 'Berkas laporan hasil pemeriksaan audit'],
             ['name' => 'Dokumen Legal', 'description' => 'Legalitas perusahaan, akta, dan perizinan'],
+            ['name' => 'Kertas Kerja Pemeriksaan (KKP)', 'description' => 'Working papers dan catatan analisis pemeriksaan auditor'],
+            ['name' => 'Bukti Audit Klien', 'description' => 'Rekening koran, laporan keuangan internal, faktur, buku besar'],
+            ['name' => 'Surat Konfirmasi', 'description' => 'Konfirmasi bank, piutang, dan utang pihak ketiga'],
         ];
 
         foreach ($categories as $category) {

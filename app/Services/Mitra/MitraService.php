@@ -38,6 +38,15 @@ class MitraService
             });
         }
 
+        // If the authenticated user is an Auditor, scope strictly to their assigned active clients
+        if ($currentUser && $currentUser->isAuditor() && ! $currentUser->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
+            $assignedMitraIds = \App\Models\AuditorAssignment::where('auditor_id', $currentUser->id)
+                ->where('status', 'active')
+                ->pluck('mitra_id')
+                ->toArray();
+            $query->whereIn('id', $assignedMitraIds);
+        }
+
         if (! empty($filters['search'])) {
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {

@@ -71,6 +71,16 @@ class User extends Authenticatable
         return $this->hasRole('Mitra') || !empty($this->mitra_id);
     }
 
+    public function isAuditor(): bool
+    {
+        return $this->hasRole('Auditor');
+    }
+
+    public function auditorAssignments(): HasMany
+    {
+        return $this->hasMany(AuditorAssignment::class, 'auditor_id');
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(Document::class, 'uploaded_by');
