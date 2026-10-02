@@ -66,15 +66,19 @@ class AuditorAssignmentController extends Controller
             return $this->error('Unauthenticated.', 401);
         }
 
-        $auditorId = $user->id;
-        if ($request->filled('auditor_id') && $user->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
-            $auditorId = (int) $request->get('auditor_id');
+        $query = AuditorAssignment::with(['mitra', 'auditor'])
+            ->where('status', 'active');
+
+        if ($user->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
+            if ($request->filled('auditor_id') && $request->get('auditor_id') !== 'all') {
+                $query->where('auditor_id', (int) $request->get('auditor_id'));
+            }
+        } else {
+            // Strictly scope to this auditor's own assignments
+            $query->where('auditor_id', $user->id);
         }
 
-        $assignments = AuditorAssignment::with(['mitra'])
-            ->where('auditor_id', $auditorId)
-            ->where('status', 'active')
-            ->get();
+        $assignments = $query->orderByDesc('tahun_buku')->orderByDesc('created_at')->get();
 
         $clientData = $assignments->map(function ($assignment) {
             $mitra = $assignment->mitra;
@@ -103,8 +107,11 @@ class AuditorAssignmentController extends Controller
 
             return [
                 'assignment_id' => $assignment->id,
+                'auditor_id' => $assignment->auditor_id,
+                'auditor_name' => $assignment->auditor->name ?? '-',
+                'auditor_email' => $assignment->auditor->email ?? '-',
                 'mitra_id' => $mitra->id,
-                'mitra_code' => $mitra->code,
+                'mitra_code' => $mitra->code ?? "K-{$mitra->id}",
                 'client_name' => $mitra->company_name ?: $mitra->name,
                 'pic_name' => $mitra->name,
                 'email' => $mitra->email,
