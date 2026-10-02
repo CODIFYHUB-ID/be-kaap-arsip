@@ -25,7 +25,12 @@ class LetterService
             'creator:id,name',
         ]);
 
-        // Scope to Mitra's own letters if logged in as Mitra
+        // Scope for Klien (strictly only letters belonging to their company)
+        if ($currentUser && $currentUser->isKlien() && ! $currentUser->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
+            $query->where('mitra_id', $currentUser->mitra_id);
+        }
+
+        // Scope to Mitra's own letters and letters from their clients
         if ($currentUser && $currentUser->isMitra() && ! $currentUser->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
             $query->where(function ($q) use ($currentUser) {
                 if ($currentUser->mitra_id) {

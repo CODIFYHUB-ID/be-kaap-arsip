@@ -54,5 +54,15 @@ class UserSeeder extends Seeder
             ]
         );
         $auditorUser->assignRole('Auditor');
+
+        $klienUser = User::firstOrCreate(
+            ['email' => 'client@kaap-arsip.com'],
+            [
+                'name' => 'Finance PT Maju Bersama',
+                'password' => Hash::make('password123'),
+                'status' => UserStatus::ACTIVE,
+            ]
+        );
+        $klienUser->assignRole('Klien');
     }
 }

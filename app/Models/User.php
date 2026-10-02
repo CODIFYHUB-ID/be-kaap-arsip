@@ -68,7 +68,12 @@ class User extends Authenticatable
 
     public function isMitra(): bool
     {
-        return $this->hasRole('Mitra') || !empty($this->mitra_id);
+        return $this->hasRole('Mitra');
+    }
+
+    public function isKlien(): bool
+    {
+        return $this->hasRole('Klien') || (!empty($this->mitra_id) && !$this->hasRole('Mitra'));
     }
 
     public function isAuditor(): bool

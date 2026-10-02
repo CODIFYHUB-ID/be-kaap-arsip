@@ -27,6 +27,7 @@ class DashboardService
 
         $isMitraUser = $currentUser && $currentUser->isMitra() && ! $currentUser->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff']);
         $isAuditorUser = $currentUser && $currentUser->isAuditor() && ! $currentUser->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff']);
+        $assignedMitraIds = [];
 
         if ($isMitraUser) {
             $docQuery->where(function ($q) use ($currentUser) {

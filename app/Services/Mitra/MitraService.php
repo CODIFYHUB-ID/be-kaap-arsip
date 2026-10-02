@@ -78,9 +78,12 @@ class MitraService
 
         $mitra = Mitra::create($data);
 
-        // If email and password provided, create login account for Mitra
+        // If email and password provided, create login account for Client (Klien)
         if (! empty($mitra->email) && ! empty($password)) {
             $user = User::where('email', $mitra->email)->first();
+
+            // Determine role: if created by Mitra or representing a Client entity, assign 'Klien'
+            $assignedRole = ($currentUser && $currentUser->isMitra()) ? 'Klien' : 'Klien';
 
             if (! $user) {
                 $user = User::create([
@@ -90,14 +93,14 @@ class MitraService
                     'status' => $mitra->status === 'inactive' ? UserStatus::INACTIVE : UserStatus::ACTIVE,
                     'mitra_id' => $mitra->id,
                 ]);
-                $user->assignRole('Mitra');
+                $user->assignRole($assignedRole);
             } else {
                 $user->update([
                     'mitra_id' => $mitra->id,
                     'password' => Hash::make($password),
                 ]);
-                if (! $user->hasRole('Mitra')) {
-                    $user->assignRole('Mitra');
+                if (! $user->hasRole($assignedRole)) {
+                    $user->assignRole($assignedRole);
                 }
             }
 

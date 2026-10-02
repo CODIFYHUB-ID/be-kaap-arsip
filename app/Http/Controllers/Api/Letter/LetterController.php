@@ -72,6 +72,11 @@ class LetterController extends Controller
             'exception_notes' => 'nullable|string',
         ]);
 
+        // Auto-assign strictly to own company for Klien users
+        if ($user && $user->isKlien() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
+            $validated['mitra_id'] = $user->mitra_id;
+        }
+
         // Auto-assign or validate mitra_id for Mitra users
         if ($user && $user->isMitra() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
             if (empty($validated['mitra_id'])) {

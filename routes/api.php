@@ -103,6 +103,13 @@ Route::prefix('v1')->group(function () {
         Route::put('/settings/kap-profile', [SettingController::class, 'updateKapProfile']);
         Route::post('/settings/kap-logo', [SettingController::class, 'uploadLogo']);
 
+        // Document Requests (Mitra <-> Klien Flow)
+        Route::get('/document-requests', [\App\Http\Controllers\Api\DocumentRequest\DocumentRequestController::class, 'index']);
+        Route::post('/document-requests', [\App\Http\Controllers\Api\DocumentRequest\DocumentRequestController::class, 'store']);
+        Route::get('/document-requests/{documentRequest}', [\App\Http\Controllers\Api\DocumentRequest\DocumentRequestController::class, 'show']);
+        Route::post('/document-requests/{documentRequest}/fulfill', [\App\Http\Controllers\Api\DocumentRequest\DocumentRequestController::class, 'fulfill']);
+        Route::post('/document-requests/{documentRequest}/review', [\App\Http\Controllers\Api\DocumentRequest\DocumentRequestController::class, 'review']);
+
         // Notifications (In-App)
         Route::get('/notifications', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'index']);
         Route::get('/notifications/unread-count', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'unreadCount']);

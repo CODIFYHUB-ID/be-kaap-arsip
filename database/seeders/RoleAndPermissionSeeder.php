@@ -35,6 +35,10 @@ class RoleAndPermissionSeeder extends Seeder
             'export-reports',
             'manage-users',
             'manage-roles',
+            'view-document-requests',
+            'create-document-requests',
+            'review-document-requests',
+            'fulfill-document-requests',
         ];
 
         foreach ($permissions as $permissionName) {
@@ -83,7 +87,7 @@ class RoleAndPermissionSeeder extends Seeder
             'view-reports',
         ]);
 
-        // Mitra / Client role
+        // Mitra role (In-charge / Partner pengelolaan klien binaan)
         $mitraRole = Role::firstOrCreate(['name' => 'Mitra', 'guard_name' => 'web']);
         $mitraRole->syncPermissions([
             'view-dashboard',
@@ -94,6 +98,20 @@ class RoleAndPermissionSeeder extends Seeder
             'upload-documents',
             'view-letters',
             'create-letters',
+            'view-document-requests',
+            'create-document-requests',
+            'review-document-requests',
+        ]);
+
+        // Klien role (Portal Mandiri Perusahaan Klien - Restricted Scope)
+        $klienRole = Role::firstOrCreate(['name' => 'Klien', 'guard_name' => 'web']);
+        $klienRole->syncPermissions([
+            'view-dashboard',
+            'view-documents',
+            'upload-documents',
+            'view-letters',
+            'view-document-requests',
+            'fulfill-document-requests',
         ]);
 
         // Auditor role (Tim Lapangan / Senior-Junior Auditor - Clean Financial Boundary)
@@ -105,6 +123,7 @@ class RoleAndPermissionSeeder extends Seeder
             'upload-documents',
             'view-letters',
             'create-letters',
+            'view-document-requests',
         ]);
 
         // 3. Assign Owner role to all existing users without any role

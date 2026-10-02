@@ -4,6 +4,7 @@ namespace App\Services\Document;
 
 use App\Enums\ActivityAction;
 use App\Enums\ActivityModule;
+use App\Models\Category;
 use App\Models\Document;
 use App\Services\ActivityLog\ActivityLogService;
 use App\Services\Storage\R2StorageService;

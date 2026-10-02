@@ -24,7 +24,41 @@ class StorageController extends Controller
             'folder' => 'nullable|string',
         ]);
 
-        $folder = $validated['folder'] ?? 'documents';
+        $folder = $validated['folder'] ?? null;
+        if (!$folder) {
+            $parts = [];
+            // 1. Client / Mitra prefix
+            if ($request->filled('mitra_id')) {
+                $mitra = \App\Models\Mitra::find($request->input('mitra_id'));
+                if ($mitra) {
+                    $parts[] = \Illuminate\Support\Str::slug($mitra->code ?: $mitra->name);
+                }
+            } elseif ($request->filled('client_code')) {
+                $parts[] = \Illuminate\Support\Str::slug($request->input('client_code'));
+            } else {
+                $parts[] = 'general';
+            }
+
+            // 2. Tahun Dokumen / Buku
+            $year = $request->input('tahun_berkas') ?: $request->input('tahun_buku') ?: now()->format('Y');
+            $parts[] = $year;
+
+            // 3. Kategori Surat / Dokumen
+            if ($request->filled('category_id')) {
+                $category = \App\Models\Category::find($request->input('category_id'));
+                if ($category) {
+                    $parts[] = \Illuminate\Support\Str::slug($category->name);
+                } else {
+                    $parts[] = 'berkas';
+                }
+            } elseif ($request->filled('category_name')) {
+                $parts[] = \Illuminate\Support\Str::slug($request->input('category_name'));
+            } else {
+                $parts[] = 'dokumen';
+            }
+
+            $folder = implode('/', $parts);
+        }
 
         $data = $this->r2StorageService->generatePresignedUploadUrl(
             $validated['file_name'],
