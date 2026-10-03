@@ -5,7 +5,6 @@ use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Category\CategoryController;
 use App\Http\Controllers\Api\Dashboard\DashboardController;
 use App\Http\Controllers\Api\Document\DocumentController;
-use App\Http\Controllers\Api\Letter\LetterController;
 use App\Http\Controllers\Api\Mitra\MitraController;
 use App\Http\Controllers\Api\RecycleBin\RecycleBinController;
 use App\Http\Controllers\Api\Report\ReportController;
@@ -65,17 +64,6 @@ Route::prefix('v1')->group(function () {
         // Categories
         Route::apiResource('/categories', CategoryController::class)->except(['show']);
 
-        // Letters
-        Route::get('/letters/generate-number', [LetterController::class, 'generateNumber']);
-        Route::patch('/letters/{letter}/lock', [LetterController::class, 'lock']);
-        Route::apiResource('/letters', LetterController::class);
-
-        // Receipts / Kwitansi Transaksi
-        Route::get('/receipts/stats', [\App\Http\Controllers\Api\Receipt\ReceiptController::class, 'stats']);
-        Route::get('/receipts/generate-number', [\App\Http\Controllers\Api\Receipt\ReceiptController::class, 'generateNumber']);
-        Route::get('/receipts/{receipt}/download', [\App\Http\Controllers\Api\Receipt\ReceiptController::class, 'download']);
-        Route::apiResource('/receipts', \App\Http\Controllers\Api\Receipt\ReceiptController::class);
-
         // Reports
         Route::get('/reports/documents', [ReportController::class, 'documents']);
         Route::get('/reports/mitras', [ReportController::class, 'mitras']);
@@ -102,6 +90,15 @@ Route::prefix('v1')->group(function () {
         Route::get('/settings/kap-profile', [SettingController::class, 'getKapProfile']);
         Route::put('/settings/kap-profile', [SettingController::class, 'updateKapProfile']);
         Route::post('/settings/kap-logo', [SettingController::class, 'uploadLogo']);
+
+        // Master Document Templates (Surat Tugas, etc.)
+        Route::get('/document-templates', [\App\Http\Controllers\Api\DocumentTemplate\DocumentTemplateController::class, 'index']);
+        Route::get('/document-templates/{code}', [\App\Http\Controllers\Api\DocumentTemplate\DocumentTemplateController::class, 'show']);
+        Route::put('/document-templates/{code}', [\App\Http\Controllers\Api\DocumentTemplate\DocumentTemplateController::class, 'update']);
+
+        // Generated Letters (Surat Tugas, etc.)
+        Route::get('/generated-letters/next-number', [\App\Http\Controllers\Api\DocumentGeneration\DocumentGenerationController::class, 'nextNumber']);
+        Route::apiResource('/generated-letters', \App\Http\Controllers\Api\DocumentGeneration\DocumentGenerationController::class);
 
         // Notifications (In-App)
         Route::get('/notifications', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'index']);

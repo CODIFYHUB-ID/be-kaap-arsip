@@ -34,25 +34,5 @@ class UserSeeder extends Seeder
             ]
         );
         $staff->assignRole('Staff');
-
-        $mitraUser = User::firstOrCreate(
-            ['email' => 'mitra@kaap-arsip.com'],
-            [
-                'name' => 'Mitra Budi Santoso',
-                'password' => Hash::make('password123'),
-                'status' => UserStatus::ACTIVE,
-            ]
-        );
-        $mitraUser->assignRole('Mitra');
-
-        $auditorUser = User::firstOrCreate(
-            ['email' => 'auditor@kaap-arsip.com'],
-            [
-                'name' => 'Senior Auditor Dian Pratama',
-                'password' => Hash::make('password123'),
-                'status' => UserStatus::ACTIVE,
-            ]
-        );
-        $auditorUser->assignRole('Auditor');
     }
 }

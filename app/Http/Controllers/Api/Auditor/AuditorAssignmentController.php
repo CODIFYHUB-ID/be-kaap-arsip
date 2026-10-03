@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\Auditor;
 use App\Http\Controllers\Controller;
 use App\Models\AuditorAssignment;
 use App\Models\Document;
-use App\Models\Letter;
 use App\Models\Mitra;
 use App\Models\User;
 use App\Support\Traits\ApiResponse;
@@ -32,8 +31,8 @@ class AuditorAssignmentController extends Controller
             'assigner:id,name',
         ]);
 
-        // If logged in user is Auditor, strictly scope to their own assignments
-        if ($user->isAuditor() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
+        // If not Owner / Admin (e.g. Staff), strictly scope to their own assignments
+        if (! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
             $query->where('auditor_id', $user->id);
         } else {
             // Optional filters for Admin / Owner
@@ -97,13 +96,8 @@ class AuditorAssignmentController extends Controller
                 ->where('is_working_paper', true)
                 ->count();
 
-            // Count confirmation letters for this client
-            $confirmationLettersCount = Letter::where('mitra_id', $mitra->id)
-                ->where(function ($q) {
-                    $q->whereNotNull('confirmation_type')
-                      ->orWhereNotNull('confirmation_status');
-                })
-                ->count();
+            // Confirmation letters count (module removed)
+            $confirmationLettersCount = 0;
 
             return [
                 'assignment_id' => $assignment->id,

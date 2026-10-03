@@ -3,7 +3,6 @@
 namespace App\Services\Report;
 
 use App\Models\Document;
-use App\Models\Letter;
 use App\Models\Mitra;
 use Illuminate\Support\Facades\DB;
 
@@ -21,33 +20,7 @@ class ReportService
         $startDate = $filters['start_date'] ?? null;
         $endDate = $filters['end_date'] ?? null;
 
-        // 1. Fetch all letters
-        $letterQuery = Letter::with(['mitra', 'category', 'document']);
-
-        if ($startDate) {
-            $letterQuery->whereDate('letter_date', '>=', $startDate);
-        }
-        if ($endDate) {
-            $letterQuery->whereDate('letter_date', '<=', $endDate);
-        }
-
-        if ($search) {
-            $letterQuery->where(function ($q) use ($search) {
-                $q->where('subject', 'like', "%{$search}%")
-                  ->orWhere('letter_number', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-        if ($categoryId) {
-            $letterQuery->where('category_id', $categoryId);
-        }
-        if ($mitraId) {
-            $letterQuery->where('mitra_id', $mitraId);
-        }
-
-        $letters = $letterQuery->latest()->get();
-
-        // 2. Fetch all documents
+        // Fetch all documents
         $docQuery = Document::with(['mitra', 'category', 'uploader']);
         if ($startDate) {
             $docQuery->whereDate('created_at', '>=', $startDate);
@@ -69,33 +42,8 @@ class ReportService
         }
         $docs = $docQuery->latest()->get();
 
-        // 3. Map into unified list
+        // Map into unified list
         $allCollected = collect();
-
-        foreach ($letters as $let) {
-            $typeName = $let->type === 'incoming' ? 'Surat Masuk' : ($let->type === 'outgoing' ? 'Surat Keluar' : 'Surat Keterangan');
-            $catName = $let->category ? $let->category->name : $typeName;
-
-            $allCollected->push([
-                'id' => 'L-' . $let->id,
-                'doc_code' => $let->letter_number ?: ('SURAT-' . str_pad($let->id, 4, '0', STR_PAD_LEFT)),
-                'file_name' => $let->subject . ($let->document ? ' (' . $let->document->file_name . ')' : '.pdf'),
-                'extension' => $let->document ? $let->document->extension : 'pdf',
-                'category' => [
-                    'id' => $let->category_id ?: 3,
-                    'name' => $catName,
-                ],
-                'mitra' => $let->mitra ? [
-                    'id' => $let->mitra->id,
-                    'name' => $let->mitra->name,
-                    'code' => $let->mitra->code,
-                    'company_name' => $let->mitra->company_name,
-                ] : null,
-                'created_at' => ($let->letter_date ?: $let->created_at)->toISOString(),
-                'file_size' => $let->document ? $let->document->file_size : 524288,
-                'status' => 'Aktif',
-            ]);
-        }
 
         foreach ($docs as $doc) {
             $catName = $doc->category ? $doc->category->name : 'Dokumen Umum';
@@ -122,34 +70,22 @@ class ReportService
 
         $totalCombined = $allCollected->count();
 
-        // 4. Calculate simplified stats (Total, Surat Masuk, Surat Keluar, Kategori Dokumen)
-        $suratMasukCount = $allCollected->filter(fn($i) => str_contains(strtolower($i['category']['name']), 'masuk'))->count();
-        $suratKeluarCount = $allCollected->filter(fn($i) => str_contains(strtolower($i['category']['name']), 'keluar'))->count();
-        $dokumenCount = max(0, $totalCombined - ($suratMasukCount + $suratKeluarCount));
-
         $stats = [
-            ['key' => 'total', 'label' => 'Total Surat & Dokumen', 'count' => $totalCombined, 'percentageChange' => 8.5, 'iconType' => 'document'],
-            ['key' => 'surat_masuk', 'label' => 'Surat Masuk', 'count' => $suratMasukCount, 'percentageChange' => 8.5, 'iconType' => 'inbox'],
-            ['key' => 'surat_keluar', 'label' => 'Surat Keluar', 'count' => $suratKeluarCount, 'percentageChange' => 6.2, 'iconType' => 'send'],
-            ['key' => 'dokumen', 'label' => 'Kategori Dokumen', 'count' => $dokumenCount, 'percentageChange' => 9.1, 'iconType' => 'folder'],
+            ['key' => 'total', 'label' => 'Total Dokumen', 'count' => $totalCombined, 'percentageChange' => 8.5, 'iconType' => 'document'],
+            ['key' => 'dokumen', 'label' => 'Kategori Dokumen', 'count' => $totalCombined, 'percentageChange' => 9.1, 'iconType' => 'folder'],
         ];
 
-        // 5. Apply tab filter if active
+        // Apply tab filter if active
         $filteredCollection = $allCollected;
         if ($tabCategory && $tabCategory !== 'all') {
             $filteredCollection = $allCollected->filter(function ($item) use ($tabCategory) {
                 $cName = strtolower($item['category']['name']);
                 $target = strtolower($tabCategory);
-                if ($target === 'surat masuk') return str_contains($cName, 'masuk');
-                if ($target === 'surat keluar') return str_contains($cName, 'keluar');
-                if ($target === 'surat keterangan') return str_contains($cName, 'keterangan');
-                if ($target === 'surat penawaran') return str_contains($cName, 'penawaran');
-                if ($target === 'surat kontrak') return str_contains($cName, 'kontrak');
                 return str_contains($cName, $target);
             })->values();
         }
 
-        // 6. Calculate dynamic breakdown for Donut Chart based on active/filtered data & DB categories
+        // Calculate dynamic breakdown for Donut Chart based on active/filtered data & DB categories
         $colors = ['#10b981', '#2563eb', '#f59e0b', '#06b6d4', '#8b5cf6', '#ec4899', '#3b82f6'];
         $breakdown = [];
         $i = 0;
@@ -174,7 +110,7 @@ class ReportService
                 $i++;
             }
         } else {
-            $grouped = $filteredCollection->groupBy(fn($i) => $i['category']['name']);
+            $grouped = $filteredCollection->groupBy(fn($item) => $item['category']['name']);
             foreach ($grouped as $catName => $grpItems) {
                 $cnt = $grpItems->count();
                 $pct = $filteredTotal > 0 ? round(($cnt / $filteredTotal) * 100) : 0;
@@ -188,7 +124,7 @@ class ReportService
             }
         }
 
-        // 7. Manual pagination
+        // Manual pagination
         $paginatedData = $filteredCollection->slice(($page - 1) * $perPage, $perPage)->values();
 
         return [
@@ -212,7 +148,7 @@ class ReportService
         $perPage = (int) ($filters['per_page'] ?? 10);
         $page = (int) ($filters['page'] ?? 1);
 
-        $query = Mitra::query()->withCount(['documents', 'letters', 'receipts']);
+        $query = Mitra::query()->withCount(['documents']);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -232,12 +168,12 @@ class ReportService
         }
 
         // Global stats calculation
-        $allMitras = Mitra::withCount(['documents', 'letters', 'receipts'])->get();
+        $allMitras = Mitra::withCount(['documents'])->get();
         $totalMitra = $allMitras->count();
         $activeMitra = $allMitras->where('status', 'active')->count();
         $totalDocs = (int) $allMitras->sum('documents_count');
-        $totalLetters = (int) $allMitras->sum('letters_count');
-        $totalReceipts = (int) $allMitras->sum('receipts_count');
+        $totalLetters = 0;
+        $totalReceipts = 0;
 
         $paginated = $query->latest()->paginate($perPage, ['*'], 'page', $page);
 

@@ -48,29 +48,6 @@ class DocumentController extends Controller
             'review_notes' => 'nullable|string',
         ]);
 
-        // Auto-assign or validate mitra_id for Mitra users
-        if ($user && $user->isMitra() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
-            if (empty($validated['mitra_id'])) {
-                $validated['mitra_id'] = $user->mitra_id;
-            } elseif ($validated['mitra_id'] != $user->mitra_id) {
-                $isAllowed = \App\Models\Mitra::where('id', $validated['mitra_id'])->where('created_by', $user->id)->exists();
-                if (! $isAllowed) {
-                    return $this->error('Anda tidak berwenang mengunggah dokumen untuk mitra ini.', 403);
-                }
-            }
-        }
-
-        // Validate mitra_id for Auditor users (strictly only assigned clients)
-        if ($user && $user->isAuditor() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
-            $assignedMitraIds = \App\Models\AuditorAssignment::where('auditor_id', $user->id)
-                ->where('status', 'active')
-                ->pluck('mitra_id')
-                ->toArray();
-            if (! empty($validated['mitra_id']) && ! in_array($validated['mitra_id'], $assignedMitraIds)) {
-                return $this->error('Akses ditolak. Anda hanya berwenang mengunggah berkas untuk klien yang ditugaskan kepada Anda.', 403);
-            }
-        }
-
         $document = $this->documentService->create(
             $validated,
             $request->user()->id,
@@ -83,57 +60,11 @@ class DocumentController extends Controller
 
     public function show(Request $request, Document $document): JsonResponse
     {
-        $user = $request->user();
-        if ($user && $user->isMitra() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
-            $isOwner = ($user->mitra_id && $document->mitra_id == $user->mitra_id)
-                || $document->uploaded_by == $user->id
-                || ($document->mitra && $document->mitra->created_by == $user->id);
-
-            if (! $isOwner) {
-                return $this->error('Anda tidak memiliki akses ke dokumen ini.', 403);
-            }
-        }
-
-        if ($user && $user->isAuditor() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
-            $assignedMitraIds = \App\Models\AuditorAssignment::where('auditor_id', $user->id)
-                ->where('status', 'active')
-                ->pluck('mitra_id')
-                ->toArray();
-            $isAllowed = ($document->mitra_id && in_array($document->mitra_id, $assignedMitraIds))
-                || $document->uploaded_by == $user->id;
-            if (! $isAllowed) {
-                return $this->error('Akses ditolak. Anda hanya dapat mengakses berkas klien penugasan audit Anda.', 403);
-            }
-        }
-
         return $this->success($document->load(['mitra', 'category', 'uploader', 'reviewer']), 'Detail dokumen berhasil diambil.');
     }
 
     public function update(Request $request, Document $document): JsonResponse
     {
-        $user = $request->user();
-        if ($user && $user->isMitra() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
-            $isOwner = ($user->mitra_id && $document->mitra_id == $user->mitra_id)
-                || $document->uploaded_by == $user->id
-                || ($document->mitra && $document->mitra->created_by == $user->id);
-
-            if (! $isOwner) {
-                return $this->error('Anda tidak memiliki akses untuk mengubah dokumen ini.', 403);
-            }
-        }
-
-        if ($user && $user->isAuditor() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
-            $assignedMitraIds = \App\Models\AuditorAssignment::where('auditor_id', $user->id)
-                ->where('status', 'active')
-                ->pluck('mitra_id')
-                ->toArray();
-            $isAllowed = ($document->mitra_id && in_array($document->mitra_id, $assignedMitraIds))
-                || $document->uploaded_by == $user->id;
-            if (! $isAllowed) {
-                return $this->error('Akses ditolak. Anda tidak memiliki akses untuk mengubah berkas ini.', 403);
-            }
-        }
-
         $validated = $request->validate([
             'mitra_id' => 'nullable|exists:mitras,id',
             'category_id' => 'nullable|exists:categories,id',
@@ -159,29 +90,6 @@ class DocumentController extends Controller
 
     public function destroy(Request $request, Document $document): JsonResponse
     {
-        $user = $request->user();
-        if ($user && $user->isMitra() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
-            $isOwner = ($user->mitra_id && $document->mitra_id == $user->mitra_id)
-                || $document->uploaded_by == $user->id
-                || ($document->mitra && $document->mitra->created_by == $user->id);
-
-            if (! $isOwner) {
-                return $this->error('Anda tidak memiliki akses untuk menghapus dokumen ini.', 403);
-            }
-        }
-
-        if ($user && $user->isAuditor() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
-            $assignedMitraIds = \App\Models\AuditorAssignment::where('auditor_id', $user->id)
-                ->where('status', 'active')
-                ->pluck('mitra_id')
-                ->toArray();
-            $isAllowed = ($document->mitra_id && in_array($document->mitra_id, $assignedMitraIds))
-                || $document->uploaded_by == $user->id;
-            if (! $isAllowed) {
-                return $this->error('Anda tidak memiliki akses untuk menghapus dokumen ini.', 403);
-            }
-        }
-
         $this->documentService->delete(
             $document,
             $request->user()->id,
@@ -194,29 +102,6 @@ class DocumentController extends Controller
 
     public function download(Request $request, Document $document): JsonResponse
     {
-        $user = $request->user();
-        if ($user && $user->isMitra() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
-            $isOwner = ($user->mitra_id && $document->mitra_id == $user->mitra_id)
-                || $document->uploaded_by == $user->id
-                || ($document->mitra && $document->mitra->created_by == $user->id);
-
-            if (! $isOwner) {
-                return $this->error('Anda tidak memiliki izin mengunduh dokumen ini.', 403);
-            }
-        }
-
-        if ($user && $user->isAuditor() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
-            $assignedMitraIds = \App\Models\AuditorAssignment::where('auditor_id', $user->id)
-                ->where('status', 'active')
-                ->pluck('mitra_id')
-                ->toArray();
-            $isAllowed = ($document->mitra_id && in_array($document->mitra_id, $assignedMitraIds))
-                || $document->uploaded_by == $user->id;
-            if (! $isAllowed) {
-                return $this->error('Akses ditolak. Anda hanya berwenang mengunduh berkas klien penugasan audit Anda.', 403);
-            }
-        }
-
         $downloadUrl = $this->documentService->getDownloadUrl(
             $document,
             $request->user()->id,
@@ -295,15 +180,6 @@ class DocumentController extends Controller
             'year' => 'nullable|string',
         ]);
 
-        if ($user && $user->isMitra() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
-            if ($user->mitra_id != $validated['mitra_id']) {
-                $isAllowed = \App\Models\Mitra::where('id', $validated['mitra_id'])->where('created_by', $user->id)->exists();
-                if (! $isAllowed) {
-                    return $this->error('Anda tidak berwenang mengunduh bundel mitra ini.', 403);
-                }
-            }
-        }
-
         $bundle = $this->documentService->getBundle((int) $validated['mitra_id'], $validated['year'] ?? null);
 
         return $this->success($bundle, 'Bundel dokumen berhasil disiapkan.');
@@ -316,7 +192,7 @@ class DocumentController extends Controller
             return $this->error('Unauthenticated.', 401);
         }
 
-        if (! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Mitra', 'Auditor'])) {
+        if (! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
             return $this->error('Akses ditolak. Anda tidak berwenang menelaah Kertas Kerja Pemeriksaan (KKP).', 403);
         }
 

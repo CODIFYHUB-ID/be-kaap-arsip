@@ -15,31 +15,6 @@ class DocumentQueryService
         $currentUser = $currentUser ?? auth()->user();
         $query = Document::with(['mitra:id,name,code,company_name', 'category:id,name', 'uploader:id,name', 'reviewer:id,name']);
 
-        // Scope to Mitra's own documents if logged in as Mitra
-        if ($currentUser && $currentUser->isMitra() && ! $currentUser->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
-            $query->where(function ($q) use ($currentUser) {
-                if ($currentUser->mitra_id) {
-                    $q->where('mitra_id', $currentUser->mitra_id);
-                }
-                $q->orWhere('uploaded_by', $currentUser->id)
-                  ->orWhereHas('mitra', function ($mq) use ($currentUser) {
-                      $mq->where('created_by', $currentUser->id);
-                  });
-            });
-        }
-
-        // Scope to Auditor assigned clients if logged in as Auditor
-        if ($currentUser && $currentUser->isAuditor() && ! $currentUser->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
-            $assignedMitraIds = \App\Models\AuditorAssignment::where('auditor_id', $currentUser->id)
-                ->where('status', 'active')
-                ->pluck('mitra_id')
-                ->toArray();
-            $query->where(function ($q) use ($assignedMitraIds, $currentUser) {
-                $q->whereIn('mitra_id', $assignedMitraIds)
-                  ->orWhere('uploaded_by', $currentUser->id);
-            });
-        }
-
         if (! empty($filters['search'])) {
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {

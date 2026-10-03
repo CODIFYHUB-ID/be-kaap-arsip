@@ -24,7 +24,7 @@ class UserController extends Controller
             return $this->error('Unauthenticated.', 401);
         }
 
-        if (($user->isMitra() || $user->isAuditor()) && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
+        if (! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
             return $this->forbidden('Akses ditolak. Anda tidak berwenang mengelola data pengguna.');
         }
 

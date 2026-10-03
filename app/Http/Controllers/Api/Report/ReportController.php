@@ -23,8 +23,8 @@ class ReportController extends Controller
             return $this->error('Unauthenticated.', 401);
         }
 
-        if ($user->isMitra() && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
-            return $this->error('Akses ditolak. Mitra tidak berwenang mengakses laporan kantor.', 403);
+        if (! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Staff'])) {
+            return $this->error('Akses ditolak.', 403);
         }
 
         return null;

@@ -4,6 +4,7 @@ namespace App\Services\Document;
 
 use App\Enums\ActivityAction;
 use App\Enums\ActivityModule;
+use App\Models\Category;
 use App\Models\Document;
 use App\Services\ActivityLog\ActivityLogService;
 use App\Services\Storage\R2StorageService;
@@ -121,9 +122,6 @@ class DocumentService
         $fileName = $document->file_name;
         $id = $document->id;
 
-        // Cascade soft delete to associated letters
-        \App\Models\Letter::where('document_id', $id)->delete();
-
         $deleted = $document->delete();
 
         if ($deleted) {
@@ -149,18 +147,6 @@ class DocumentService
             $user = \App\Models\User::find($userId);
             if (! $user || ! $user->hasAnyRole(['Owner', 'Super Admin'])) {
                 abort(403, 'Berkas Laporan Auditor Independen (LAI) / Arsip Final sedang menunggu persetujuan Pimpinan KAP (Owner).');
-            }
-        }
-
-        // Enforce assignment scoping for Auditor role
-        $requestUser = \App\Models\User::find($userId);
-        if ($requestUser && $requestUser->isAuditor() && ! $requestUser->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
-            $assignedMitraIds = \App\Models\AuditorAssignment::where('auditor_id', $userId)
-                ->where('status', 'active')
-                ->pluck('mitra_id')
-                ->toArray();
-            if (! in_array($document->mitra_id, $assignedMitraIds) && $document->uploaded_by !== $userId) {
-                abort(403, 'Akses ditolak. Anda hanya berwenang mengunduh berkas bukti audit untuk klien yang ditugaskan kepada Anda.');
             }
         }
 

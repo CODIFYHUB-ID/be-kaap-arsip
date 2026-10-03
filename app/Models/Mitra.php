@@ -41,11 +41,6 @@ class Mitra extends Model
         return $this->hasMany(Document::class);
     }
 
-    public function letters(): HasMany
-    {
-        return $this->hasMany(Letter::class);
-    }
-
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -54,10 +49,5 @@ class Mitra extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function receipts(): HasMany
-    {
-        return $this->hasMany(Receipt::class);
     }
 }

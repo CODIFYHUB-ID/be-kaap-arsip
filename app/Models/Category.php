@@ -20,9 +20,4 @@ class Category extends Model
     {
         return $this->hasMany(Document::class);
     }
-
-    public function letters(): HasMany
-    {
-        return $this->hasMany(Letter::class);
-    }
 }

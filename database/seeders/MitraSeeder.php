@@ -117,18 +117,6 @@ class MitraSeeder extends Seeder
                 ['code' => $mitraData['code']],
                 $mitraData
             );
-
-            // Connect demo mitra user to M-001 if exists
-            if ($mitra->code === 'M-001') {
-                $user = \App\Models\User::where('email', 'mitra@kaap-arsip.com')
-                    ->orWhere('email', $mitra->email)
-                    ->first();
-
-                if ($user) {
-                    $user->update(['mitra_id' => $mitra->id]);
-                    $mitra->update(['user_id' => $user->id]);
-                }
-            }
         }
     }
 }

@@ -23,7 +23,7 @@ class SettingController extends Controller
             return $this->error('Unauthenticated.', 401);
         }
 
-        if (($user->isMitra() || $user->isAuditor()) && ! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
+        if (! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
             return $this->forbidden('Akses ditolak. Anda tidak berwenang mengakses atau mengubah pengaturan sistem.');
         }
 
@@ -69,6 +69,7 @@ class SettingController extends Controller
             'kap_name' => 'nullable|string|max:255',
             'kap_tagline' => 'nullable|string|max:255',
             'kap_license_no' => 'nullable|string|max:255',
+            'kap_network' => 'nullable|string|max:255',
             'kap_ojk_no' => 'nullable|string|max:255',
             'kap_iapi_no' => 'nullable|string|max:255',
             'kap_leader_name' => 'nullable|string|max:255',
@@ -78,10 +79,13 @@ class SettingController extends Controller
             'kap_city' => 'nullable|string|max:100',
             'kap_postal_code' => 'nullable|string|max:20',
             'kap_phone' => 'nullable|string|max:100',
+            'kap_fax' => 'nullable|string|max:100',
             'kap_email' => 'nullable|string|email|max:150',
             'kap_website' => 'nullable|string|max:150',
+            'kap_branches' => 'nullable|string|max:1000',
             'kap_branch_address' => 'nullable|string|max:500',
             'kap_logo_url' => 'nullable|string|max:500',
+            'kap_kop_type' => 'nullable|string|in:biasa,amplop,kontrak,tanpa_kop',
             'kap_kop_layout' => 'nullable|string|in:standard,centered,modern',
             'kap_divider_style' => 'nullable|string|in:double,single,accent',
         ]);

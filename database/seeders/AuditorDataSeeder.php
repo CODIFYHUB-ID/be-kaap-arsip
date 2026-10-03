@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Document;
-use App\Models\Letter;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -12,7 +11,7 @@ class AuditorDataSeeder extends Seeder
 {
     public function run(): void
     {
-        $auditor = User::where('email', 'auditor@kaap-arsip.com')->first();
+        $auditor = User::where('email', 'staff@kaap-arsip.com')->first() ?? User::first();
         if (! $auditor) return;
 
         $catKKP = Category::firstOrCreate(['name' => 'Kertas Kerja Pemeriksaan (KKP)'], ['description' => 'Working papers auditor']);
@@ -97,65 +96,5 @@ class AuditorDataSeeder extends Seeder
             ]
         );
 
-        // Sample Confirmation Letters
-        Letter::updateOrCreate(
-            ['letter_number' => '045/KAP-SN/KNF/II/2025'],
-            [
-                'mitra_id' => 1,
-                'category_id' => $catKonfirmasi->id,
-                'type' => 'outgoing',
-                'subject' => 'Surat Konfirmasi Saldo Rekening Bank Mandiri',
-                'sender' => 'KAP Sinuraya & Rekan',
-                'recipient' => 'PT Bank Mandiri (Persero) Tbk - Cabang Thamrin',
-                'status' => 'final',
-                'letter_date' => '2025-02-10',
-                'confirmation_type' => 'bank',
-                'confirmation_status' => 'menunggu_jawaban',
-                'third_party_name' => 'PT Bank Mandiri (Persero) Tbk',
-                'description' => 'Konfirmasi saldo rekening per 31 Desember 2025 untuk PT Maju Bersama.',
-                'created_by' => $auditor->id,
-            ]
-        );
-
-        Letter::updateOrCreate(
-            ['letter_number' => '048/KAP-SN/KNF/II/2025'],
-            [
-                'mitra_id' => 1,
-                'category_id' => $catKonfirmasi->id,
-                'type' => 'outgoing',
-                'subject' => 'Surat Konfirmasi Saldo Piutang Usaha PT Global Distribusi',
-                'sender' => 'KAP Sinuraya & Rekan',
-                'recipient' => 'PT Global Distribusi Utama',
-                'status' => 'final',
-                'letter_date' => '2025-02-12',
-                'confirmation_type' => 'piutang',
-                'confirmation_status' => 'selisih',
-                'third_party_name' => 'PT Global Distribusi Utama',
-                'confirmation_reply_date' => '2025-02-28',
-                'exception_notes' => 'Pihak ketiga mencatat saldo Rp 420.000.000, terdapat selisih Rp 30.000.000 karena pelunasan giro masih in-transit per 31 Des 2025.',
-                'description' => 'Konfirmasi piutang usaha perikatan audit PT Maju Bersama.',
-                'created_by' => $auditor->id,
-            ]
-        );
-
-        Letter::updateOrCreate(
-            ['letter_number' => '052/KAP-SN/KNF/II/2025'],
-            [
-                'mitra_id' => 1,
-                'category_id' => $catKonfirmasi->id,
-                'type' => 'outgoing',
-                'subject' => 'Surat Konfirmasi Utang Usaha PT Supplier Baja Nusantara',
-                'sender' => 'KAP Sinuraya & Rekan',
-                'recipient' => 'PT Supplier Baja Nusantara',
-                'status' => 'final',
-                'letter_date' => '2025-02-15',
-                'confirmation_type' => 'utang',
-                'confirmation_status' => 'terjawab',
-                'third_party_name' => 'PT Supplier Baja Nusantara',
-                'confirmation_reply_date' => '2025-02-24',
-                'description' => 'Jawaban konfirmasi utang cocok (Rp 180.000.000) tanpa selisih.',
-                'created_by' => $auditor->id,
-            ]
-        );
     }
 }

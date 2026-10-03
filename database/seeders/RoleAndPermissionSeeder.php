@@ -25,12 +25,6 @@ class RoleAndPermissionSeeder extends Seeder
             'view-documents',
             'upload-documents',
             'delete-documents',
-            'view-letters',
-            'create-letters',
-            'delete-letters',
-            'view-kwitansi',
-            'create-kwitansi',
-            'delete-kwitansi',
             'view-reports',
             'export-reports',
             'manage-users',
@@ -62,10 +56,6 @@ class RoleAndPermissionSeeder extends Seeder
             'edit-mitra',
             'view-documents',
             'upload-documents',
-            'view-letters',
-            'create-letters',
-            'view-kwitansi',
-            'create-kwitansi',
             'view-reports',
             'export-reports',
         ]);
@@ -77,35 +67,11 @@ class RoleAndPermissionSeeder extends Seeder
             'view-mitra',
             'view-documents',
             'upload-documents',
-            'view-letters',
-            'create-letters',
-            'view-kwitansi',
             'view-reports',
         ]);
 
-        // Mitra / Client role
-        $mitraRole = Role::firstOrCreate(['name' => 'Mitra', 'guard_name' => 'web']);
-        $mitraRole->syncPermissions([
-            'view-dashboard',
-            'view-mitra',
-            'create-mitra',
-            'edit-mitra',
-            'view-documents',
-            'upload-documents',
-            'view-letters',
-            'create-letters',
-        ]);
-
-        // Auditor role (Tim Lapangan / Senior-Junior Auditor - Clean Financial Boundary)
-        $auditorRole = Role::firstOrCreate(['name' => 'Auditor', 'guard_name' => 'web']);
-        $auditorRole->syncPermissions([
-            'view-dashboard',
-            'view-mitra',
-            'view-documents',
-            'upload-documents',
-            'view-letters',
-            'create-letters',
-        ]);
+        // Remove deprecated Mitra & Auditor roles if existing in DB
+        Role::whereIn('name', ['Mitra', 'Auditor'])->delete();
 
         // 3. Assign Owner role to all existing users without any role
         $users = User::all();
