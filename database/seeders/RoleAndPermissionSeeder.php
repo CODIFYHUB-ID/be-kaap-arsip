@@ -29,6 +29,10 @@ class RoleAndPermissionSeeder extends Seeder
             'export-reports',
             'manage-users',
             'manage-roles',
+            'view-document-requests',
+            'create-document-requests',
+            'review-document-requests',
+            'fulfill-document-requests',
         ];
 
         foreach ($permissions as $permissionName) {

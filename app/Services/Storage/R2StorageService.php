@@ -18,15 +18,9 @@ class R2StorageService
         $originalBasename = pathinfo($filename, PATHINFO_FILENAME);
         $slug = Str::slug($originalBasename) ?: 'file';
         $uuidShort = substr(Str::uuid()->toString(), 0, 8);
+        // Hierarchical path structure: [klien]/[tahun]/[kategori]/[file]
         $cleanFolder = trim($folder ?: 'documents', '/');
-
-        // Ensure path hierarchy is organized by Year and clean naming
-        if (!preg_match('/\b(19|20)\d{2}\b/', $cleanFolder)) {
-            $year = now()->format('Y');
-            $key = "{$cleanFolder}/{$year}/{$slug}-{$uuidShort}.{$extension}";
-        } else {
-            $key = "{$cleanFolder}/{$slug}-{$uuidShort}.{$extension}";
-        }
+        $key = "{$cleanFolder}/{$slug}-{$uuidShort}.{$extension}";
 
         $uploadUrl = null;
 
