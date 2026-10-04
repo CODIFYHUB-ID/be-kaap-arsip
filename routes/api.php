@@ -106,6 +106,12 @@ Route::prefix('v1')->group(function () {
         Route::post('/invoices/{id}/duplicate', [\App\Http\Controllers\Api\Invoice\InvoiceController::class, 'duplicate']);
         Route::apiResource('/invoices', \App\Http\Controllers\Api\Invoice\InvoiceController::class);
 
+        // Outgoing Letters (Surat Penawaran, Surat Keterangan / Cover Note)
+        Route::get('/outgoing-letters/next-number', [\App\Http\Controllers\Api\OutgoingLetter\OutgoingLetterController::class, 'nextNumber']);
+        Route::post('/outgoing-letters/{id}/revise', [\App\Http\Controllers\Api\OutgoingLetter\OutgoingLetterController::class, 'revise']);
+        Route::post('/outgoing-letters/{id}/duplicate', [\App\Http\Controllers\Api\OutgoingLetter\OutgoingLetterController::class, 'duplicate']);
+        Route::apiResource('/outgoing-letters', \App\Http\Controllers\Api\OutgoingLetter\OutgoingLetterController::class);
+
         // Notifications (In-App)
         Route::get('/notifications', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'index']);
         Route::get('/notifications/unread-count', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'unreadCount']);
