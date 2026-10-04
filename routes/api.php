@@ -119,6 +119,12 @@ Route::prefix('v1')->group(function () {
         Route::post('/bank-confirmations/{id}/duplicate', [\App\Http\Controllers\Api\BankConfirmation\BankConfirmationController::class, 'duplicate']);
         Route::apiResource('/bank-confirmations', \App\Http\Controllers\Api\BankConfirmation\BankConfirmationController::class);
 
+        // Debtor & Creditor Confirmations (Konfirmasi Utang & Piutang) Module
+        Route::get('/debtor-creditor-confirmations/next-number', [\App\Http\Controllers\Api\DebtorCreditorConfirmation\DebtorCreditorConfirmationController::class, 'nextNumber']);
+        Route::post('/debtor-creditor-confirmations/{id}/revise', [\App\Http\Controllers\Api\DebtorCreditorConfirmation\DebtorCreditorConfirmationController::class, 'revise']);
+        Route::post('/debtor-creditor-confirmations/{id}/duplicate', [\App\Http\Controllers\Api\DebtorCreditorConfirmation\DebtorCreditorConfirmationController::class, 'duplicate']);
+        Route::apiResource('/debtor-creditor-confirmations', \App\Http\Controllers\Api\DebtorCreditorConfirmation\DebtorCreditorConfirmationController::class);
+
         // Notifications (In-App)
         Route::get('/notifications', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'index']);
         Route::get('/notifications/unread-count', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'unreadCount']);
