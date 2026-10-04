@@ -100,6 +100,12 @@ Route::prefix('v1')->group(function () {
         Route::get('/generated-letters/next-number', [\App\Http\Controllers\Api\DocumentGeneration\DocumentGenerationController::class, 'nextNumber']);
         Route::apiResource('/generated-letters', \App\Http\Controllers\Api\DocumentGeneration\DocumentGenerationController::class);
 
+        // Invoices / Kwitansi Module
+        Route::get('/invoices/next-number', [\App\Http\Controllers\Api\Invoice\InvoiceController::class, 'nextNumber']);
+        Route::post('/invoices/{id}/revise', [\App\Http\Controllers\Api\Invoice\InvoiceController::class, 'revise']);
+        Route::post('/invoices/{id}/duplicate', [\App\Http\Controllers\Api\Invoice\InvoiceController::class, 'duplicate']);
+        Route::apiResource('/invoices', \App\Http\Controllers\Api\Invoice\InvoiceController::class);
+
         // Notifications (In-App)
         Route::get('/notifications', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'index']);
         Route::get('/notifications/unread-count', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'unreadCount']);
