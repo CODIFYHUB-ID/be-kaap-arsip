@@ -112,6 +112,13 @@ Route::prefix('v1')->group(function () {
         Route::post('/outgoing-letters/{id}/duplicate', [\App\Http\Controllers\Api\OutgoingLetter\OutgoingLetterController::class, 'duplicate']);
         Route::apiResource('/outgoing-letters', \App\Http\Controllers\Api\OutgoingLetter\OutgoingLetterController::class);
 
+        // Bank Confirmations (Konfirmasi Bank) Module
+        Route::get('/bank-confirmations/next-number', [\App\Http\Controllers\Api\BankConfirmation\BankConfirmationController::class, 'nextNumber']);
+        Route::get('/bank-confirmations/client-banks/{mitraId}', [\App\Http\Controllers\Api\BankConfirmation\BankConfirmationController::class, 'getClientBanks']);
+        Route::post('/bank-confirmations/{id}/revise', [\App\Http\Controllers\Api\BankConfirmation\BankConfirmationController::class, 'revise']);
+        Route::post('/bank-confirmations/{id}/duplicate', [\App\Http\Controllers\Api\BankConfirmation\BankConfirmationController::class, 'duplicate']);
+        Route::apiResource('/bank-confirmations', \App\Http\Controllers\Api\BankConfirmation\BankConfirmationController::class);
+
         // Notifications (In-App)
         Route::get('/notifications', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'index']);
         Route::get('/notifications/unread-count', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'unreadCount']);

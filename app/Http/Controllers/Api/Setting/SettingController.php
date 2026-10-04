@@ -88,6 +88,14 @@ class SettingController extends Controller
             'kap_kop_type' => 'nullable|string|in:biasa,amplop,kontrak,tanpa_kop',
             'kap_kop_layout' => 'nullable|string|in:standard,centered,modern',
             'kap_divider_style' => 'nullable|string|in:double,single,accent',
+            'auditor_correspondence_name' => 'nullable|string|max:255',
+            'auditor_correspondence_pic' => 'nullable|string|max:255',
+            'auditor_correspondence_address' => 'nullable|string|max:500',
+            'auditor_correspondence_postal_code' => 'nullable|string|max:20',
+            'auditor_correspondence_city' => 'nullable|string|max:100',
+            'auditor_correspondence_phone' => 'nullable|string|max:100',
+            'auditor_correspondence_hp' => 'nullable|string|max:100',
+            'auditor_correspondence_email' => 'nullable|string|max:150',
         ]);
 
         $updated = $this->settingService->updateKapProfile($validated);

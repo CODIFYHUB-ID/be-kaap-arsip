@@ -67,6 +67,15 @@ class SystemSettingService
             'kap_kop_type' => $this->get('kap_kop_type', 'biasa'),
             'kap_kop_layout' => $this->get('kap_kop_layout', 'standard'),
             'kap_divider_style' => $this->get('kap_divider_style', 'double'),
+            // Alamat Korespondensi Auditor (Khusus Konfirmasi Bank, dsb.)
+            'auditor_correspondence_name' => $this->get('auditor_correspondence_name', 'Kantor Akuntan Publik Drs. Selamat Sinuraya & Rekan'),
+            'auditor_correspondence_pic' => $this->get('auditor_correspondence_pic', 'Sucipto, CPA, CPI'),
+            'auditor_correspondence_address' => $this->get('auditor_correspondence_address', 'Jalan Pasundan No. 29 A Kel. Sei Putih Timur II – Medan Petisah'),
+            'auditor_correspondence_postal_code' => $this->get('auditor_correspondence_postal_code', '20118'),
+            'auditor_correspondence_city' => $this->get('auditor_correspondence_city', 'Kota Medan – Sumut'),
+            'auditor_correspondence_phone' => $this->get('auditor_correspondence_phone', '061 4150 385'),
+            'auditor_correspondence_hp' => $this->get('auditor_correspondence_hp', '0813-6141-7503'),
+            'auditor_correspondence_email' => $this->get('auditor_correspondence_email', 'ap_sucipto@yahoo.co.id'),
         ];
     }
 
@@ -95,6 +104,14 @@ class SystemSettingService
             'kap_kop_type',
             'kap_kop_layout',
             'kap_divider_style',
+            'auditor_correspondence_name',
+            'auditor_correspondence_pic',
+            'auditor_correspondence_address',
+            'auditor_correspondence_postal_code',
+            'auditor_correspondence_city',
+            'auditor_correspondence_phone',
+            'auditor_correspondence_hp',
+            'auditor_correspondence_email',
         ];
 
         foreach ($allowedKeys as $key) {
