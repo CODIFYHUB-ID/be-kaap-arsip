@@ -42,6 +42,7 @@ Route::prefix('v1')->group(function () {
 
         // Mitras
         Route::get('/mitras/{mitra}/documents', [MitraController::class, 'documents']);
+        Route::get('/mitras/{mitra}/generated-source-documents', [MitraController::class, 'generatedSourceDocuments']);
         Route::apiResource('/mitras', MitraController::class);
 
         // Documents
