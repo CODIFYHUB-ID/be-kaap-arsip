@@ -13,6 +13,7 @@ class CategorySeeder extends Seeder
     public function run(): void
     {
         $categories = [
+            ['name' => 'Surat Tugas', 'description' => 'Surat tugas pemeriksaan tim auditor'],
             ['name' => 'Surat Kontrak', 'description' => 'Dokumen perjanjian dan perikatan kerja sama'],
             ['name' => 'Surat Penawaran', 'description' => 'Surat penawaran jasa audit / konsul'],
             ['name' => 'Kwitansi', 'description' => 'Bukti pembayaran dan faktur'],

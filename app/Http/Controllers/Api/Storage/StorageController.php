@@ -27,23 +27,27 @@ class StorageController extends Controller
         $folder = $validated['folder'] ?? null;
         if (!$folder) {
             $parts = [];
-            // 1. Client / Mitra prefix
+            // 1. Client / Klien folder: nama klien (company_name atau name)
             if ($request->filled('mitra_id')) {
                 $mitra = \App\Models\Mitra::find($request->input('mitra_id'));
                 if ($mitra) {
-                    $parts[] = \Illuminate\Support\Str::slug($mitra->code ?: $mitra->name);
+                    $clientFolderName = $mitra->company_name ?: $mitra->name;
+                    $parts[] = \Illuminate\Support\Str::slug($clientFolderName);
+                } else {
+                    $parts[] = 'klien-umum';
                 }
-            } elseif ($request->filled('client_code')) {
-                $parts[] = \Illuminate\Support\Str::slug($request->input('client_code'));
+            } elseif ($request->filled('client_code') || $request->filled('client_name')) {
+                $name = $request->input('client_name') ?: $request->input('client_code');
+                $parts[] = \Illuminate\Support\Str::slug($name);
             } else {
-                $parts[] = 'general';
+                $parts[] = 'klien-umum';
             }
 
-            // 2. Tahun Dokumen / Buku
+            // 2. Tahun Dokumen / Berkas
             $year = $request->input('tahun_berkas') ?: $request->input('tahun_buku') ?: now()->format('Y');
             $parts[] = $year;
 
-            // 3. Kategori Surat / Dokumen
+            // 3. Jenis Surat / Kategori Dokumen
             if ($request->filled('category_id')) {
                 $category = \App\Models\Category::find($request->input('category_id'));
                 if ($category) {
@@ -54,7 +58,7 @@ class StorageController extends Controller
             } elseif ($request->filled('category_name')) {
                 $parts[] = \Illuminate\Support\Str::slug($request->input('category_name'));
             } else {
-                $parts[] = 'dokumen';
+                $parts[] = 'umum';
             }
 
             $folder = implode('/', $parts);

@@ -116,4 +116,123 @@ class MitraController extends Controller
         $documents = $query->get();
         return $this->success($documents, 'Dokumen milik mitra berhasil diambil.');
     }
+
+    public function generatedSourceDocuments(Request $request, Mitra $mitra): JsonResponse
+    {
+        $year = $request->get('tahun_berkas');
+        $items = collect();
+
+        // 1. Surat Tugas (GeneratedLetter)
+        $lettersQuery = \App\Models\GeneratedLetter::where('mitra_id', $mitra->id);
+        if ($year && $year !== 'all') {
+            $lettersQuery->where(function ($q) use ($year) {
+                $q->whereYear('letter_date', $year)
+                  ->orWhere('period_end_date', 'like', "%{$year}%")
+                  ->orWhereYear('created_at', $year);
+            });
+        }
+        foreach ($lettersQuery->orderByDesc('id')->get() as $item) {
+            $items->push([
+                'id' => $item->id,
+                'source_type' => 'surat_tugas',
+                'source_title' => 'Surat Tugas',
+                'number' => $item->letter_number,
+                'title' => 'Surat Tugas - ' . ($item->audit_type ?: 'Pemeriksaan Audit') . ' (' . $item->letter_number . ')',
+                'date' => $item->letter_date ? $item->letter_date->format('Y-m-d') : $item->created_at->format('Y-m-d'),
+                'target_category' => 'Surat Tugas',
+                'url' => '/pembuatan-berkas/surat-tugas/' . $item->id,
+            ]);
+        }
+
+        // 2. Kwitansi / Invoices
+        $invoicesQuery = \App\Models\Invoice::where('mitra_id', $mitra->id);
+        if ($year && $year !== 'all') {
+            $invoicesQuery->where(function ($q) use ($year) {
+                $q->whereYear('invoice_date', $year)
+                  ->orWhereYear('created_at', $year);
+            });
+        }
+        foreach ($invoicesQuery->orderByDesc('id')->get() as $item) {
+            $items->push([
+                'id' => $item->id,
+                'source_type' => 'kwitansi',
+                'source_title' => 'Kwitansi',
+                'number' => $item->invoice_number,
+                'title' => 'Kwitansi / Invoice (' . $item->invoice_number . ') - Rp ' . number_format($item->total_amount, 0, ',', '.'),
+                'date' => $item->invoice_date ? $item->invoice_date->format('Y-m-d') : $item->created_at->format('Y-m-d'),
+                'target_category' => 'Kwitansi',
+                'url' => '/pembuatan-berkas/kwitansi/' . $item->id,
+            ]);
+        }
+
+        // 3. Surat Keluar (Penawaran & Keterangan)
+        $outgoingQuery = \App\Models\OutgoingLetter::where('mitra_id', $mitra->id);
+        if ($year && $year !== 'all') {
+            $outgoingQuery->where(function ($q) use ($year) {
+                $q->whereYear('letter_date', $year)
+                  ->orWhere('fiscal_year', $year)
+                  ->orWhereYear('created_at', $year);
+            });
+        }
+        foreach ($outgoingQuery->orderByDesc('id')->get() as $item) {
+            $cat = $item->letter_type === 'penawaran' ? 'Surat Penawaran' : 'Surat Keterangan';
+            $items->push([
+                'id' => $item->id,
+                'source_type' => 'surat_keluar_' . $item->letter_type,
+                'source_title' => $cat,
+                'number' => $item->letter_number,
+                'title' => $cat . ' (' . $item->letter_number . ')' . ($item->subject ? ' - ' . $item->subject : ''),
+                'date' => $item->letter_date ? $item->letter_date->format('Y-m-d') : $item->created_at->format('Y-m-d'),
+                'target_category' => $cat,
+                'url' => '/pembuatan-berkas/surat-keluar/' . $item->id,
+            ]);
+        }
+
+        // 4. Konfirmasi Bank
+        $bankQuery = \App\Models\BankConfirmation::where('mitra_id', $mitra->id);
+        if ($year && $year !== 'all') {
+            $bankQuery->where(function ($q) use ($year) {
+                $q->whereYear('letter_date', $year)
+                  ->orWhereYear('balance_date', $year)
+                  ->orWhereYear('created_at', $year);
+            });
+        }
+        foreach ($bankQuery->orderByDesc('id')->get() as $item) {
+            $items->push([
+                'id' => $item->id,
+                'source_type' => 'konfirmasi_bank',
+                'source_title' => 'Konfirmasi Bank',
+                'number' => $item->confirmation_number,
+                'title' => 'Konfirmasi Bank ' . ($item->bank_name ? '(' . $item->bank_name . ') ' : '') . '[' . $item->confirmation_number . ']',
+                'date' => $item->letter_date ? $item->letter_date->format('Y-m-d') : $item->created_at->format('Y-m-d'),
+                'target_category' => 'Surat Konfirmasi',
+                'url' => '/pembuatan-berkas/konfirmasi-bank/' . $item->id,
+            ]);
+        }
+
+        // 5. Konfirmasi Utang & Piutang
+        $debtorQuery = \App\Models\DebtorCreditorConfirmation::where('mitra_id', $mitra->id);
+        if ($year && $year !== 'all') {
+            $debtorQuery->where(function ($q) use ($year) {
+                $q->whereYear('letter_date', $year)
+                  ->orWhereYear('balance_date', $year)
+                  ->orWhereYear('created_at', $year);
+            });
+        }
+        foreach ($debtorQuery->orderByDesc('id')->get() as $item) {
+            $typeLabel = $item->confirmation_type === 'payable' ? 'Konfirmasi Utang' : 'Konfirmasi Piutang';
+            $items->push([
+                'id' => $item->id,
+                'source_type' => 'konfirmasi_utang_piutang',
+                'source_title' => $typeLabel,
+                'number' => $item->package_number,
+                'title' => $typeLabel . ' [' . $item->package_number . ']',
+                'date' => $item->letter_date ? $item->letter_date->format('Y-m-d') : $item->created_at->format('Y-m-d'),
+                'target_category' => 'Surat Konfirmasi',
+                'url' => '/pembuatan-berkas/konfirmasi-utang-piutang/' . $item->id,
+            ]);
+        }
+
+        return $this->success($items->values(), 'Dokumen hasil pembuatan berkas berhasil diambil.');
+    }
 }
