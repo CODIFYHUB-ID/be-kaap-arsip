@@ -12,14 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         // 1. Data bank milik klien (bisa multi bank per klien)
-        Schema::create('client_banks', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('mitra_id')->constrained('mitras')->cascadeOnDelete();
-            $table->string('bank_name');
-            $table->text('bank_address')->nullable();
-            $table->string('account_number')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('client_banks')) {
+            Schema::create('client_banks', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('mitra_id')->constrained('mitras')->cascadeOnDelete();
+                $table->string('bank_name');
+                $table->text('bank_address')->nullable();
+                $table->string('account_number')->nullable();
+                $table->timestamps();
+            });
+        }
 
         // 2. Dokumen Konfirmasi Bank (2 halaman: Surat & Formulir Konfirmasi)
         Schema::create('bank_confirmations', function (Blueprint $table) {
@@ -59,7 +61,7 @@ return new class extends Migration
 
             // Catatan instruksi internal klien
             $table->boolean('show_note')->default(true);
-            $table->text('note_text')->nullable()->default('Note : Sebelum dikirim konfirmasi ini dicopy terlebih dahulu sebagai pertinggal');
+            $table->string('note_text', 500)->nullable()->default('Note : Sebelum dikirim konfirmasi ini dicopy terlebih dahulu sebagai pertinggal');
 
             // Audit workflow & tracking
             $table->string('status', 30)->default('draft')->index(); // draft, sent, received

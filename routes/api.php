@@ -125,6 +125,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/debtor-creditor-confirmations/{id}/duplicate', [\App\Http\Controllers\Api\DebtorCreditorConfirmation\DebtorCreditorConfirmationController::class, 'duplicate']);
         Route::apiResource('/debtor-creditor-confirmations', \App\Http\Controllers\Api\DebtorCreditorConfirmation\DebtorCreditorConfirmationController::class);
 
+        // Audit Contracts (Surat Kontrak Perikatan Audit) Module
+        Route::get('/audit-contracts/next-number', [\App\Http\Controllers\Api\AuditContract\AuditContractController::class, 'nextNumber']);
+        Route::apiResource('/audit-contracts', \App\Http\Controllers\Api\AuditContract\AuditContractController::class);
+
         // Notifications (In-App)
         Route::get('/notifications', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'index']);
         Route::get('/notifications/unread-count', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'unreadCount']);

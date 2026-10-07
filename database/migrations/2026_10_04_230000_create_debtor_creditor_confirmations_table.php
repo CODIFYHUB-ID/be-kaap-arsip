@@ -45,7 +45,7 @@ return new class extends Migration
             // Pengaturan Tampilan & Catatan
             $table->boolean('show_cut_line')->default(true);
             $table->boolean('show_note')->default(true);
-            $table->text('note_text')->nullable()->default('Note : Sebelum dikirim konfirmasi ini dicopy terlebih dahulu sebagai pertinggal');
+            $table->string('note_text', 500)->nullable()->default('Note : Sebelum dikirim konfirmasi ini dicopy terlebih dahulu sebagai pertinggal');
 
             // Rekap Saldo
             $table->decimal('total_nominal', 18, 2)->default(0);
