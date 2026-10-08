@@ -15,24 +15,24 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $owner = User::firstOrCreate(
-            ['email' => 'admin@kaap-arsip.com'],
+        $owner = User::updateOrCreate(
+            ['email' => 'owner@office.kapdssr.com'],
             [
                 'name' => 'Owner KAP Sinuraya',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('ownerkaap123'),
                 'status' => UserStatus::ACTIVE,
             ]
         );
-        $owner->assignRole('Owner');
+        $owner->syncRoles(['Owner']);
 
-        $staff = User::firstOrCreate(
-            ['email' => 'staff@kaap-arsip.com'],
+        $staff = User::updateOrCreate(
+            ['email' => 'staff@office.kapdssr.com'],
             [
                 'name' => 'Staff Arsip',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('staffkaap123'),
                 'status' => UserStatus::ACTIVE,
             ]
         );
-        $staff->assignRole('Staff');
+        $staff->syncRoles(['Staff']);
     }
 }
