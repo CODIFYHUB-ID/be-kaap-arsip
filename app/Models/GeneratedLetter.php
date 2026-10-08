@@ -24,6 +24,9 @@ class GeneratedLetter extends Model
         'city',
         'signatory_name',
         'signatory_title',
+        'signature_stamp_url',
+        'show_signature_stamp',
+        'signature_stamp_width',
         'opening_text',
         'scope_text',
         'closing_text',
@@ -35,6 +38,8 @@ class GeneratedLetter extends Model
     protected $casts = [
         'assigned_auditors' => 'array',
         'letter_date' => 'date',
+        'show_signature_stamp' => 'boolean',
+        'signature_stamp_width' => 'integer',
     ];
 
     public function template()

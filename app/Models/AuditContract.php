@@ -33,6 +33,9 @@ class AuditContract extends Model
         'kop_type',
         'signatory_name',
         'signatory_title',
+        'signature_stamp_url',
+        'show_signature_stamp',
+        'signature_stamp_width',
         'custom_html',
         'status',
         'created_by',
@@ -43,6 +46,8 @@ class AuditContract extends Model
         'fee_amount' => 'decimal:2',
         'report_copies' => 'integer',
         'payment_terms' => 'array',
+        'show_signature_stamp' => 'boolean',
+        'signature_stamp_width' => 'integer',
     ];
 
     public function mitra()
