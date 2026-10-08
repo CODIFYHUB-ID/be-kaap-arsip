@@ -130,6 +130,11 @@ Route::prefix('v1')->group(function () {
         Route::get('/audit-contracts/next-number', [\App\Http\Controllers\Api\AuditContract\AuditContractController::class, 'nextNumber']);
         Route::apiResource('/audit-contracts', \App\Http\Controllers\Api\AuditContract\AuditContractController::class);
 
+        // Physical Audits / Opname Fisik (Cash, Persediaan, Aset Tetap) Module
+        Route::get('/physical-audits/next-number', [\App\Http\Controllers\Api\PhysicalAudit\PhysicalAuditController::class, 'nextNumber']);
+        Route::post('/physical-audits/{id}/upload-r2', [\App\Http\Controllers\Api\PhysicalAudit\PhysicalAuditController::class, 'uploadToR2AndArchive']);
+        Route::apiResource('/physical-audits', \App\Http\Controllers\Api\PhysicalAudit\PhysicalAuditController::class);
+
         // Notifications (In-App)
         Route::get('/notifications', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'index']);
         Route::get('/notifications/unread-count', [\App\Http\Controllers\Api\Notification\NotificationController::class, 'unreadCount']);
