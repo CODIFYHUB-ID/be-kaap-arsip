@@ -120,43 +120,52 @@ class BankConfirmationController extends Controller
             'items.*.order' => 'nullable|integer',
         ]);
 
-        return DB::transaction(function () use ($validated, $request) {
-            $user = $request->user();
-            $validated['created_by'] = $user ? $user->id : null;
-            $itemsData = $validated['items'] ?? [];
-            unset($validated['items']);
+        try {
+            return DB::transaction(function () use ($validated, $request) {
+                $user = $request->user();
+                $validated['created_by'] = $user ? $user->id : null;
+                $itemsData = $validated['items'] ?? [];
+                unset($validated['items']);
 
-            $confirmation = BankConfirmation::create($validated);
+                $confirmation = BankConfirmation::create($validated);
 
-            foreach ($itemsData as $idx => $it) {
-                BankConfirmationItem::create([
-                    'bank_confirmation_id' => $confirmation->id,
-                    'category' => $it['category'],
-                    'col_1' => $it['col_1'] ?? null,
-                    'amount_1' => $it['amount_1'] ?? null,
-                    'col_2' => $it['col_2'] ?? null,
-                    'col_3' => $it['col_3'] ?? null,
-                    'amount_2' => $it['amount_2'] ?? null,
-                    'remarks' => $it['remarks'] ?? null,
-                    'order' => $it['order'] ?? $idx,
-                ]);
-            }
+                foreach ($itemsData as $idx => $it) {
+                    BankConfirmationItem::create([
+                        'bank_confirmation_id' => $confirmation->id,
+                        'category' => $it['category'],
+                        'col_1' => $it['col_1'] ?? null,
+                        'amount_1' => $it['amount_1'] ?? null,
+                        'col_2' => $it['col_2'] ?? null,
+                        'col_3' => $it['col_3'] ?? null,
+                        'amount_2' => $it['amount_2'] ?? null,
+                        'remarks' => $it['remarks'] ?? null,
+                        'order' => $it['order'] ?? $idx,
+                    ]);
+                }
 
-            // Simpan bank ke client_banks jika mitra_id ada agar tersimpan per klien
-            if (!empty($validated['mitra_id']) && !empty($validated['bank_name'])) {
-                ClientBank::firstOrCreate([
-                    'mitra_id' => $validated['mitra_id'],
-                    'bank_name' => $validated['bank_name'],
-                ], [
-                    'bank_address' => $validated['bank_address'] ?? null,
-                ]);
-            }
+                // Simpan bank ke client_banks jika mitra_id ada agar tersimpan per klien
+                if (!empty($validated['mitra_id']) && !empty($validated['bank_name'])) {
+                    ClientBank::firstOrCreate([
+                        'mitra_id' => $validated['mitra_id'],
+                        'bank_name' => $validated['bank_name'],
+                    ], [
+                        'bank_address' => $validated['bank_address'] ?? null,
+                    ]);
+                }
 
-            return $this->created(
-                $confirmation->load(['mitra', 'creator', 'items']),
-                'Dokumen konfirmasi bank berhasil disimpan.'
-            );
-        });
+                return $this->created(
+                    $confirmation->load(['mitra', 'creator', 'items']),
+                    'Dokumen konfirmasi bank berhasil disimpan.'
+                );
+            });
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('BankConfirmation store error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all(),
+            ]);
+
+            return $this->error('Gagal menyimpan konfirmasi bank: ' . $e->getMessage(), null, 500);
+        }
     }
 
     /**

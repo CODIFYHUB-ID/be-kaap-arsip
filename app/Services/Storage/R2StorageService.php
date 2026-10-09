@@ -17,10 +17,9 @@ class R2StorageService
         $extension = pathinfo($filename, PATHINFO_EXTENSION) ?: 'bin';
         $originalBasename = pathinfo($filename, PATHINFO_FILENAME);
         $slug = Str::slug($originalBasename) ?: 'file';
-        $uuidShort = substr(Str::uuid()->toString(), 0, 8);
-        // Hierarchical path structure: [klien]/[tahun]/[kategori]/[file]
+        // Hierarchical path structure: [mitra]/[tahun]/[kategori berkas]/[nama berkas]
         $cleanFolder = trim($folder ?: 'documents', '/');
-        $key = "{$cleanFolder}/{$slug}-{$uuidShort}.{$extension}";
+        $key = "{$cleanFolder}/{$slug}.{$extension}";
 
         $uploadUrl = null;
 
