@@ -16,20 +16,20 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         $owner = User::updateOrCreate(
-            ['email' => 'owner@office.kapdssr.com'],
+            ['email' => 'owner@kapdssr.com'],
             [
                 'name' => 'Owner KAP Sinuraya',
-                'password' => Hash::make('ownerkaap123'),
+                'password' => Hash::make('owner123'),
                 'status' => UserStatus::ACTIVE,
             ]
         );
         $owner->syncRoles(['Owner']);
 
         $staff = User::updateOrCreate(
-            ['email' => 'staff@office.kapdssr.com'],
+            ['email' => 'staff@kapdssr.com'],
             [
                 'name' => 'Staff Arsip',
-                'password' => Hash::make('staffkaap123'),
+                'password' => Hash::make('staff123'),
                 'status' => UserStatus::ACTIVE,
             ]
         );
