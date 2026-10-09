@@ -25,6 +25,18 @@ trait ApiResponse
     }
 
     /**
+     * Return a 201 Created JSON response.
+     *
+     * @param mixed $data
+     * @param string $message
+     * @return JsonResponse
+     */
+    public function created(mixed $data = null, string $message = 'Resource created successfully'): JsonResponse
+    {
+        return $this->success($data, $message, Response::HTTP_CREATED);
+    }
+
+    /**
      * Return a paginated JSON response with meta pagination details.
      *
      * @param mixed $resource
