@@ -11,13 +11,11 @@ class DocumentTemplate extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'category_slug',
-        'title',
         'code',
+        'name',
+        'category',
+        'title',
         'description',
-        'content',
-        'fields_schema',
-        'default_letterhead_id',
         'kop_type',
         'number_format',
         'opening_text',
@@ -26,6 +24,9 @@ class DocumentTemplate extends Model
         'signatory_city',
         'signatory_name',
         'signatory_title',
+        'body_html',
+        'content',
+        'fields_schema',
         'is_active',
         'created_by',
     ];

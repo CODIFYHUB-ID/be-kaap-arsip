@@ -30,6 +30,9 @@ Route::prefix('v1')->group(function () {
     Route::put('/storage/upload-mock', [StorageController::class, 'uploadMock']);
     Route::post('/storage/upload-mock', [StorageController::class, 'uploadMock']);
 
+    // Direct Secure Stream Route (Supports Token Query Param for iframes / previews)
+    Route::get('/documents/{document}/stream', [\App\Http\Controllers\Api\Document\DocumentController::class, 'stream']);
+
     // Protected API Routes (Sanctum Auth)
     Route::middleware('auth:sanctum')->group(function () {
 

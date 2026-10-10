@@ -36,6 +36,10 @@ class BankConfirmationController extends Controller
             });
         }
 
+        if ($clientName = $request->input('client_name')) {
+            $query->where('client_name', 'like', "%{$clientName}%");
+        }
+
         if ($status = $request->input('status')) {
             if ($status !== 'all') {
                 $query->where('status', $status);
@@ -49,18 +53,27 @@ class BankConfirmationController extends Controller
 
     /**
      * Generate next confirmation number recommendation
-     * e.g. KB/001/BAZNAS/II/2022
+     * e.g. KB/001/KAP/2026 (selalu mencari nomor unik berikutnya yang belum terpakai)
      */
     public function nextNumber(Request $request): JsonResponse
     {
         $year = (int) date('Y');
-        $count = BankConfirmation::whereYear('created_at', $year)->count();
-        $nextSeq = str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+        $seq = BankConfirmation::withTrashed()->whereYear('created_at', $year)->count() + 1;
+
+        do {
+            $formattedSeq = str_pad($seq, 3, '0', STR_PAD_LEFT);
+            $candidateNumber = "KB/{$formattedSeq}/KAP/{$year}";
+            $exists = BankConfirmation::withTrashed()->where('confirmation_number', $candidateNumber)->exists();
+            if (!$exists) {
+                break;
+            }
+            $seq++;
+        } while (true);
 
         return $this->success([
-            'seq_number' => $nextSeq,
+            'seq_number' => $formattedSeq,
             'year' => (string) $year,
-            'recommended_number' => "KB/{$nextSeq}/KAP/{$year}",
+            'recommended_number' => $candidateNumber,
         ], 'Rekomendasi nomor konfirmasi bank berhasil digenerate.');
     }
 
