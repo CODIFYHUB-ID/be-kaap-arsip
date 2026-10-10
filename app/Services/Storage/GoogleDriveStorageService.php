@@ -16,8 +16,31 @@ class GoogleDriveStorageService
     public function __construct()
     {
         $this->rootFolderId = env('GOOGLE_DRIVE_ROOT_FOLDER_ID');
-        $credentialsPath = base_path(env('GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON', 'storage/app/google-drive-credentials.json'));
 
+        $clientId = env('GOOGLE_DRIVE_CLIENT_ID');
+        $clientSecret = env('GOOGLE_DRIVE_CLIENT_SECRET');
+        $refreshToken = env('GOOGLE_DRIVE_REFRESH_TOKEN');
+
+        if (!empty($clientId) && !empty($clientSecret) && !empty($refreshToken)) {
+            try {
+                $this->client = new Client();
+                $this->client->setClientId($clientId);
+                $this->client->setClientSecret($clientSecret);
+                $this->client->addScope(Drive::DRIVE);
+                $token = $this->client->fetchAccessTokenWithRefreshToken($refreshToken);
+                if (isset($token['access_token'])) {
+                    $this->client->setAccessToken($token);
+                    $this->service = new Drive($this->client);
+                    return;
+                } else {
+                    Log::error('GoogleDrive fetchAccessTokenWithRefreshToken error: ' . json_encode($token));
+                }
+            } catch (\Throwable $e) {
+                Log::error('GoogleDriveStorageService OAuth init failed: ' . $e->getMessage());
+            }
+        }
+
+        $credentialsPath = base_path(env('GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON', 'storage/app/google-drive-credentials.json'));
         if (file_exists($credentialsPath)) {
             try {
                 $this->client = new Client();
@@ -25,7 +48,7 @@ class GoogleDriveStorageService
                 $this->client->addScope(Drive::DRIVE);
                 $this->service = new Drive($this->client);
             } catch (\Throwable $e) {
-                Log::error('GoogleDriveStorageService init failed: ' . $e->getMessage());
+                Log::error('GoogleDriveStorageService ServiceAccount init failed: ' . $e->getMessage());
             }
         }
     }

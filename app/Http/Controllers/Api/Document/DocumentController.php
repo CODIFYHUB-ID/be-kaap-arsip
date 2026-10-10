@@ -69,15 +69,18 @@ class DocumentController extends Controller
                 $pdfPlaceholder = "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj 3 0 obj<</Type/Page/MediaBox[0 0 595 842]/Parent 2 0 R/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj 4 0 obj<</Length 160>>stream\nBT\n/F1 14 Tf\n50 780 Td\n(KAP Drs. Selamat Sinuraya dan Rekan) Tj\n/F1 11 Tf\n0 -30 Td\n(Arsip Dokumen: " . addcslashes($docTitle, "()") . ") Tj\n0 -20 Td\n(Klien: " . addcslashes($clientName, "()") . ") Tj\n0 -20 Td\n(Tahun: " . addcslashes($tahun, "()") . ") Tj\nET\nendstream\nendobj 5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\nxref\n0 6\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \n0000000242 00000 n \n0000000454 00000 n \ntrailer<</Size 6/Root 1 0 R>>\nstartxref\n525\n%%EOF";
 
                 $r2Storage->putContent($fileKey, $pdfPlaceholder, $validated['mime_type'] ?: 'application/pdf');
+            }
 
-                // Dual Backup: Sync to Google Drive automatically
-                try {
-                    $driveStorage = app(\App\Services\Storage\GoogleDriveStorageService::class);
-                    $folderPath = dirname($fileKey);
-                    $driveStorage->uploadFile($folderPath, $validated['file_name'], $pdfPlaceholder, $validated['mime_type'] ?: 'application/pdf');
-                } catch (\Throwable $driveEx) {
-                    \Illuminate\Support\Facades\Log::warning('Google Drive auto-backup warning: ' . $driveEx->getMessage());
+            // Dual Backup: Sync to Google Drive automatically for any new document
+            try {
+                $driveStorage = app(\App\Services\Storage\GoogleDriveStorageService::class);
+                $folderPath = dirname($fileKey);
+                $content = $disk->get($fileKey);
+                if (!empty($content)) {
+                    $driveStorage->uploadFile($folderPath, $validated['file_name'], $content, $validated['mime_type'] ?: 'application/pdf');
                 }
+            } catch (\Throwable $driveEx) {
+                \Illuminate\Support\Facades\Log::warning('Google Drive auto-backup warning: ' . $driveEx->getMessage());
             }
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('R2 Auto-upload on store warning: ' . $e->getMessage());

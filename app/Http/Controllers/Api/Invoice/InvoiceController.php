@@ -27,6 +27,10 @@ class InvoiceController extends Controller
             $query->where('mitra_id', $mitraId);
         }
 
+        if ($clientName = $request->input('client_name')) {
+            $query->where('client_name', 'like', "%{$clientName}%");
+        }
+
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('invoice_number', 'like', "%{$search}%")
@@ -52,26 +56,51 @@ class InvoiceController extends Controller
     public function nextNumber(Request $request): JsonResponse
     {
         $year = (int) date('Y');
-        $count = Invoice::whereYear('created_at', $year)->count();
-        $nextSeq = $count + 1;
-        $paddedSeq = str_pad($nextSeq, 3, '0', STR_PAD_LEFT);
+        $month = (int) date('n');
 
-        $monthRoman = match ((int) date('n')) {
+        $monthRoman = match ($month) {
             1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
             7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII',
             default => 'I'
         };
 
-        $format = "{$paddedSeq}/INV/SSR/{$monthRoman}/{$year}";
+        // Cari nomor urut tertinggi yang sudah ada di database untuk tahun ini
+        // Format umum: {seq}/INV/SSR/{month}/{year}
+        $existingNumbers = Invoice::whereYear('created_at', $year)
+            ->orWhere('invoice_number', 'like', "%/{$year}")
+            ->pluck('invoice_number');
+
+        $maxSeq = 0;
+        foreach ($existingNumbers as $num) {
+            if (preg_match('/^(\d+)\//', $num, $matches)) {
+                $numVal = (int) $matches[1];
+                if ($numVal > $maxSeq) {
+                    $maxSeq = $numVal;
+                }
+            }
+        }
+
+        $seq = max($maxSeq + 1, 1);
+
+        // Verifikasi looping agar pasti nomor candidate belum terpakai di DB
+        do {
+            $paddedSeq = str_pad($seq, 3, '0', STR_PAD_LEFT);
+            $candidateNumber = "{$paddedSeq}/INV/SSR/{$monthRoman}/{$year}";
+            $exists = Invoice::where('invoice_number', $candidateNumber)->exists();
+            if (!$exists) {
+                break;
+            }
+            $seq++;
+        } while (true);
 
         return $this->success([
-            'sequence' => $nextSeq,
+            'sequence' => $seq,
             'padded_sequence' => $paddedSeq,
             'prefix' => 'INV',
             'code' => 'SSR',
             'roman_month' => $monthRoman,
             'year' => $year,
-            'formatted_number' => $format,
+            'formatted_number' => $candidateNumber,
         ], 'Nomor invoice berikutnya berhasil digenerate.');
     }
 
