@@ -166,6 +166,29 @@ class DocumentService
         return $url;
     }
 
+    public function streamFile(Document $document, int $userId, bool $inline = true, ?string $ip = null, ?string $ua = null)
+    {
+        if ($document->is_final_archive && $document->approval_status !== 'approved') {
+            $user = \App\Models\User::find($userId);
+            if (! $user || ! $user->hasAnyRole(['Owner', 'Super Admin'])) {
+                abort(403, 'Berkas Laporan Auditor Independen (LAI) / Arsip Final sedang menunggu persetujuan Pimpinan KAP (Owner).');
+            }
+        }
+
+        $this->activityLogService->log(
+            userId: $userId,
+            action: ActivityAction::DOWNLOAD,
+            module: ActivityModule::DOCUMENT,
+            description: "Akses stream berkas dokumen: {$document->file_name}",
+            resourceType: Document::class,
+            resourceId: $document->id,
+            ipAddress: $ip,
+            userAgent: $ua
+        );
+
+        return $this->r2StorageService->streamResponse($document->file_key, $document->file_name, $document->mime_type, $inline);
+    }
+
     public function approve(Document $document, int $userId, ?string $notes = null, ?string $ip = null, ?string $ua = null): Document
     {
         $document->update([

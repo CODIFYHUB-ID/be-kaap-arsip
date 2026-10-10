@@ -62,6 +62,9 @@ class StorageController extends Controller
             }
 
             $folder = implode('/', $parts);
+        } else {
+            // Bersihkan jika ada prefix documents/ ganda
+            $folder = trim(preg_replace('#^documents/?#i', '', $folder), '/');
         }
 
         $data = $this->r2StorageService->generatePresignedUploadUrl(

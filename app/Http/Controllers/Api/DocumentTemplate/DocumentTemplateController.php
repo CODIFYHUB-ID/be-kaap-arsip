@@ -19,8 +19,9 @@ class DocumentTemplateController extends Controller
     {
         return [
             'code' => 'surat_tugas',
+            'name' => 'Template Surat Tugas Audit',
             'title' => 'SURAT TUGAS',
-            'category_slug' => 'surat-tugas',
+            'category' => 'surat_tugas',
             'description' => 'Template Surat Tugas Pemeriksaan Auditor KAP (General Audit)',
             'kop_type' => 'biasa',
             'number_format' => 'No. 113/ ST-SSR / VI / 2026',
@@ -42,7 +43,7 @@ class DocumentTemplateController extends Controller
         $templates = DocumentTemplate::where('is_active', true)->get();
 
         // If surat_tugas doesn't exist yet, seed it automatically
-        if (!$templates->contains('code', 'surat_tugas') && !$templates->contains('category_slug', 'surat-tugas')) {
+        if (!$templates->contains('code', 'surat_tugas') && !$templates->contains('category', 'surat_tugas')) {
             $default = DocumentTemplate::create(self::getDefaultSuratTugasTemplate());
             $templates->push($default);
         }
@@ -56,7 +57,7 @@ class DocumentTemplateController extends Controller
     public function show(string $code): JsonResponse
     {
         $template = DocumentTemplate::where('code', $code)
-            ->orWhere('category_slug', $code)
+            ->orWhere('category', $code)
             ->first();
 
         if (!$template && ($code === 'surat_tugas' || $code === 'surat-tugas')) {
@@ -76,7 +77,7 @@ class DocumentTemplateController extends Controller
     public function update(Request $request, string $code): JsonResponse
     {
         $template = DocumentTemplate::where('code', $code)
-            ->orWhere('category_slug', $code)
+            ->orWhere('category', $code)
             ->first();
 
         if (!$template && ($code === 'surat_tugas' || $code === 'surat-tugas')) {

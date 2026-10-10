@@ -12,14 +12,15 @@ class R2StorageService
     /**
      * Generate a presigned upload URL for direct client upload to R2.
      */
-    public function generatePresignedUploadUrl(string $filename, string $mimeType, ?string $folder = 'documents'): array
+    public function generatePresignedUploadUrl(string $filename, string $mimeType, ?string $folder = ''): array
     {
         $extension = pathinfo($filename, PATHINFO_EXTENSION) ?: 'bin';
         $originalBasename = pathinfo($filename, PATHINFO_FILENAME);
         $slug = Str::slug($originalBasename) ?: 'file';
-        // Hierarchical path structure: [mitra]/[tahun]/[kategori berkas]/[nama berkas]
-        $cleanFolder = trim($folder ?: 'documents', '/');
-        $key = "{$cleanFolder}/{$slug}.{$extension}";
+        $uuidShort = substr(Str::uuid()->toString(), 0, 8);
+        // Hierarchical path structure: [klien]/[tahun]/[kategori]/[file] (langsung di root bucket)
+        $cleanFolder = trim($folder ?: 'umum', '/');
+        $key = "{$cleanFolder}/{$slug}-{$uuidShort}.{$extension}";
 
         $uploadUrl = null;
 
@@ -49,10 +50,19 @@ class R2StorageService
     }
 
     /**
-     * Generate a presigned download URL for R2 object.
+     * Generate a download/preview URL for R2 object.
+     * Menggunakan CLOUDFLARE_R2_URL langsung (jika ada) untuk menghindari benturan
+     * otentikasi dual (X-Amz-Signature vs Authorization header di browser).
      */
     public function generatePresignedDownloadUrl(string $fileKey, string $fileName, int $expirationMinutes = 30): string
     {
+        $publicUrl = config("filesystems.disks.{$this->disk}.url");
+        if (!empty($publicUrl)) {
+            $trimmedUrl = rtrim($publicUrl, '/');
+            $encodedKey = implode('/', array_map('rawurlencode', explode('/', ltrim($fileKey, '/'))));
+            return "{$trimmedUrl}/{$encodedKey}";
+        }
+
         try {
             return Storage::disk($this->disk)->temporaryUrl(
                 $fileKey,
@@ -64,6 +74,64 @@ class R2StorageService
         } catch (\Throwable $e) {
             return url("/storage/{$fileKey}");
         }
+    }
+
+    /**
+     * Store raw file content directly into R2 storage.
+     */
+    public function putContent(string $fileKey, string $content, string $mimeType = 'application/pdf'): bool
+    {
+        try {
+            return Storage::disk($this->disk)->put($fileKey, $content, [
+                'ContentType' => $mimeType,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('R2 putContent Error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Check if object exists in R2 storage.
+     */
+    public function exists(string $fileKey): bool
+    {
+        try {
+            return Storage::disk($this->disk)->exists($fileKey);
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Return direct binary response stream for preview or download.
+     */
+    public function streamResponse(string $fileKey, string $fileName, ?string $mimeType = null, bool $inline = true)
+    {
+        $mime = $mimeType ?: 'application/pdf';
+        $disposition = $inline ? 'inline' : 'attachment';
+
+        try {
+            $disk = Storage::disk($this->disk);
+            if ($disk->exists($fileKey)) {
+                return $disk->response($fileKey, basename($fileName), [
+                    'Content-Type' => $mime,
+                    'Content-Disposition' => "{$disposition}; filename=\"" . basename($fileName) . "\"",
+                ]);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('R2 Stream Response Error: ' . $e->getMessage());
+        }
+
+        // Fallback: check local storage disk
+        if (Storage::disk('local')->exists($fileKey)) {
+            return Storage::disk('local')->response($fileKey, basename($fileName), [
+                'Content-Type' => $mime,
+                'Content-Disposition' => "{$disposition}; filename=\"" . basename($fileName) . "\"",
+            ]);
+        }
+
+        abort(404, 'Berkas fisik dokumen tidak ditemukan di penyimpanan server atau cloud.');
     }
 
     /**

@@ -39,6 +39,10 @@ class DebtorCreditorConfirmationController extends Controller
             });
         }
 
+        if ($clientName = $request->input('client_name')) {
+            $query->where('client_name', 'like', "%{$clientName}%");
+        }
+
         if ($status = $request->input('status')) {
             if ($status !== 'all') {
                 $query->where('status', $status);
@@ -67,12 +71,21 @@ class DebtorCreditorConfirmationController extends Controller
         ];
         $roman = $romanMonths[$month] ?? 'VIII';
 
-        $count = DebtorCreditorConfirmation::whereYear('created_at', $year)->count();
-        $nextSeq = str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+        $seq = DebtorCreditorConfirmation::withTrashed()->whereYear('created_at', $year)->count() + 1;
+
+        do {
+            $formattedSeq = str_pad($seq, 3, '0', STR_PAD_LEFT);
+            $candidateNumber = "{$prefix}/{$year}/{$roman}/{$formattedSeq}";
+            $exists = DebtorCreditorConfirmation::withTrashed()->where('package_number', $candidateNumber)->exists();
+            if (!$exists) {
+                break;
+            }
+            $seq++;
+        } while (true);
 
         return $this->success([
-            'recommended_number' => "{$prefix}/{$year}/{$roman}/{$nextSeq}",
-            'seq_number' => $nextSeq,
+            'recommended_number' => $candidateNumber,
+            'seq_number' => $formattedSeq,
             'year' => (string) $year,
         ], 'Nomor paket konfirmasi berhasil digenerate.');
     }
