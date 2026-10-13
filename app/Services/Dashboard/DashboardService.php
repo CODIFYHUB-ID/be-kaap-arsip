@@ -13,6 +13,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Mitra;
 use App\Models\OutgoingLetter;
+use App\Models\PhysicalAudit;
 
 class DashboardService
 {
@@ -24,7 +25,6 @@ class DashboardService
         $currentUser = $currentUser ?? auth()->user();
 
         $docQuery = Document::query();
-        $mitraQuery = Mitra::where('status', 'active');
         $activityQuery = ActivityLog::with('user:id,name');
 
         if ($startDate && $endDate) {
@@ -32,13 +32,17 @@ class DashboardService
             $end = $endDate . ' 23:59:59';
 
             $docQuery->whereBetween('created_at', [$start, $end]);
-            $mitraQuery->whereBetween('created_at', [$start, $end]);
             $activityQuery->whereBetween('created_at', [$start, $end]);
         }
 
         $totalDocuments = $docQuery->count();
-        $totalMitras = $mitraQuery->count();
-        $totalStorageBytes = $docQuery->sum('file_size');
+
+        // Klien dan storage adalah kondisi terkini, sehingga tidak dibatasi periode
+        $totalMitras = Mitra::count();
+        $activeMitras = Mitra::where('status', 'active')->count();
+        $totalStorageBytes = Document::sum('file_size');
+
+        $opnameFisik = $this->getOpnameFisikSummary($startDate, $endDate);
 
         $recentActivities = $activityQuery
             ->orderByDesc('created_at')
@@ -232,6 +236,7 @@ class DashboardService
             'stats' => [
                 'total_documents' => $totalDocuments,
                 'total_mitras' => $totalMitras,
+                'active_mitras' => $activeMitras,
                 'total_contracts' => $totalKontrak,
                 'total_contracts_fee' => $totalContractFee,
                 'total_invoices' => $totalInvoicesCount,
@@ -250,7 +255,32 @@ class DashboardService
             'financial_overview' => $financialOverview,
             'correspondence_overview' => $correspondenceOverview,
             'pending_approvals' => $pendingApprovalsList,
+            'opname_fisik' => $opnameFisik,
             'auditor_overview' => null,
         ];
+    }
+
+    /**
+     * Ringkasan modul Pemeriksaan Fisik (cash, persediaan, aset tetap).
+     */
+    private function getOpnameFisikSummary(?string $startDate, ?string $endDate): array
+    {
+        $summary = [];
+
+        foreach (['cash', 'persediaan', 'aset_tetap'] as $type) {
+            $query = PhysicalAudit::where('type', $type);
+            if ($startDate && $endDate) {
+                $query->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+            }
+
+            $summary[$type] = [
+                'count' => (clone $query)->count(),
+                'final_count' => (clone $query)->whereIn('status', ['completed', 'archived'])->count(),
+                'total_amount' => (float) (clone $query)->sum('total_amount'),
+                'total_items' => (int) (clone $query)->sum('total_items_count'),
+            ];
+        }
+
+        return $summary;
     }
 }
