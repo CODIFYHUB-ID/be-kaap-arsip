@@ -52,9 +52,20 @@ class PhysicalAuditController extends Controller
             }
         }
 
+        // Ringkasan dihitung dari seluruh hasil filter (bukan hanya halaman aktif)
+        $summary = [
+            'total_berkas' => (clone $query)->count(),
+            'completed_count' => (clone $query)->where('status', 'completed')->count(),
+            'total_amount' => (float) (clone $query)->sum('total_amount'),
+            'total_items' => (int) (clone $query)->sum('total_items_count'),
+        ];
+
         $list = $query->orderBy('created_at', 'desc')->paginate($request->input('per_page', 15));
 
-        return $this->success($list, 'Daftar audit fisik berhasil diambil.');
+        return $this->success(
+            array_merge($list->toArray(), ['summary' => $summary]),
+            'Daftar audit fisik berhasil diambil.'
+        );
     }
 
     /**
