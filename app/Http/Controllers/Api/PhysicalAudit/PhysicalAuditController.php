@@ -81,9 +81,14 @@ class PhysicalAuditController extends Controller
             default => 'OP-CASH',
         };
 
+        // Ambil nomor urut terbesar (termasuk yang sudah di-soft-delete, karena unique index tetap memakainya)
         $year = (int) date('Y');
-        $count = PhysicalAudit::where('type', $type)->whereYear('created_at', $year)->count();
-        $nextSeq = str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+        $lastSeq = PhysicalAudit::withTrashed()
+            ->where('audit_number', 'like', "{$prefix}/{$year}/%")
+            ->pluck('audit_number')
+            ->map(fn ($number) => (int) Str::afterLast($number, '/'))
+            ->max() ?? 0;
+        $nextSeq = str_pad($lastSeq + 1, 3, '0', STR_PAD_LEFT);
 
         return $this->success([
             'seq_number' => $nextSeq,
